@@ -41,7 +41,6 @@ import com.example.tailorbook.components.LocalProviderWrapper
 import com.example.tailorbook.routes.NavHostManager.LocalNavController
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SplashScreen() {
     val context = LocalContext.current

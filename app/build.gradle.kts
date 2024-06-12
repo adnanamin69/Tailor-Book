@@ -4,6 +4,11 @@ plugins {
     alias(libs.plugins.devtools.ksp)
     alias(libs.plugins.dagger.hilt.android)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.google.gms.google.services)
+    alias(libs.plugins.firebase.crashlytics)
+    alias(libs.plugins.google.firebase.firebase.perf)
+
+
 }
 
 android {
@@ -86,4 +91,12 @@ dependencies {
   //  implementation(libs.compose.shimmer)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.gson)
+
+
+    //firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.perf.ktx)
+
 }
