@@ -22,10 +22,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.example.tailorbook" />
+                  <option name="mobileSdkAppId" value="1:583861023918:android:722e8a0a0a54b4a26a693f" />
+                  <option name="projectId" value="tailor-book-e18d8" />
+                  <option name="projectNumber" value="583861023918" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
