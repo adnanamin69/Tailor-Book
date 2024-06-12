@@ -71,6 +71,7 @@ dependencies {
 
 
     implementation(libs.androidx.navigation.compose)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -88,7 +89,7 @@ dependencies {
     // For Coroutines
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
-  //  implementation(libs.compose.shimmer)
+    //  implementation(libs.compose.shimmer)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.gson)
 
@@ -98,5 +99,9 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.perf.ktx)
+    implementation(libs.firebase.storage)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.auth)
+
 
 }
