@@ -6,6 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -45,26 +46,7 @@ import com.example.tailorbook.routes.NavHostManager.LocalNavController
 fun SplashScreen() {
     val context = LocalContext.current
     val navController = LocalNavController.current
-    Scaffold(topBar = {
-        TopAppBar(colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
-            title = {
-                Text("")
-            },
-            navigationIcon = {
-                IconButton(onClick = { navController.navigateUp() }) {
-                    Icon(
-                        Icons.Outlined.ArrowBackIosNew,
-                        contentDescription = ""
-                    )
-                }
-            },
-
-            actions = {
-
-            }
-
-        )
-    }) {
+    Scaffold {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -72,9 +54,10 @@ fun SplashScreen() {
                 .padding(6.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-
+            Spacer(modifier = Modifier.weight(1f))
 
             AnimatedLinearProgressIndicator()
+            Spacer(modifier = Modifier.weight(1f))
         }
     }
 }
