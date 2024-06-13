@@ -11,4 +11,7 @@ sealed class Navigation {
     @Serializable
     data object Home : Navigation()
 
+    @Serializable
+    data object Login : Navigation()
+
 }

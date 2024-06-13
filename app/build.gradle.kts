@@ -83,6 +83,7 @@ dependencies {
 
     // For Hilt
     implementation(libs.hilt.android)
+    implementation(libs.androidx.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
 
 
@@ -102,6 +103,6 @@ dependencies {
     implementation(libs.firebase.storage)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)
-
+    implementation("com.github.TuleSimon:xMaterialccp:v2.11")
 
 }

@@ -6,6 +6,8 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.tailorbook.screens.HomeScreen
+import com.example.tailorbook.screens.PhoneNumberScreen
 import com.example.tailorbook.screens.SplashScreen
 
 object NavHostManager {
@@ -22,6 +24,15 @@ object NavHostManager {
             composable<Navigation.Splash> {
                 SplashScreen()
             }
+
+
+            composable<Navigation.Login> {
+                PhoneNumberScreen()
+            }
+            composable<Navigation.Home> {
+                HomeScreen()
+            }
+
 
         }
 

@@ -39,6 +39,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.tailorbook.components.LocalProviderWrapper
 import com.example.tailorbook.routes.NavHostManager.LocalNavController
+import com.example.tailorbook.routes.Navigation
 
 
 @Composable
@@ -67,6 +68,8 @@ fun AnimatedLinearProgressIndicator(
     modifier: Modifier = Modifier,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
 ) {
+
+    val navController = LocalNavController.current
     var progress by remember { mutableFloatStateOf(0.1F) }
     val progressAnimDuration = 8_000
     val progressAnimation by animateFloatAsState(
@@ -87,6 +90,11 @@ fun AnimatedLinearProgressIndicator(
 
 
     )
+
+
+    if (progressAnimation >= 1)
+        navController.navigate(Navigation.Login)
+
     LaunchedEffect(lifecycleOwner) {
         progress = 1f
     }
