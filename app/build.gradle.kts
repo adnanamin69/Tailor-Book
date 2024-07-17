@@ -7,8 +7,6 @@ plugins {
     alias(libs.plugins.google.gms.google.services)
     alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.google.firebase.firebase.perf)
-
-
 }
 
 android {
