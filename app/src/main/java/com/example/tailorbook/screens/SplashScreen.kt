@@ -92,8 +92,10 @@ fun AnimatedLinearProgressIndicator(
     )
 
 
-    if (progressAnimation >= 1)
+    if (progressAnimation >= 1) {
+        navController.navigateUp()
         navController.navigate(Navigation.Login)
+    }
 
     LaunchedEffect(lifecycleOwner) {
         progress = 1f

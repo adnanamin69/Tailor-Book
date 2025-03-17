@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 
-class PhoneAuthHandler @Inject constructor(
+class PhoneAuthHandler(
     private val auth: FirebaseAuth
 ) {
 

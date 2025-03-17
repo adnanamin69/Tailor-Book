@@ -33,9 +33,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tailorbook.auth.AuthViewModel
 import com.example.tailorbook.components.LocalProviderWrapper
@@ -47,6 +46,7 @@ import com.simon.xmaterialccp.data.utils.checkPhoneNumber
 import com.simon.xmaterialccp.data.utils.getDefaultLangCode
 import com.simon.xmaterialccp.data.utils.getDefaultPhoneCode
 import com.simon.xmaterialccp.data.utils.getLibCountries
+import org.koin.androidx.compose.koinViewModel
 import java.util.concurrent.TimeUnit
 
 
@@ -56,7 +56,8 @@ fun PhoneNumberScreen() {
     val context = LocalContext.current
     val navController = NavHostManager.LocalNavController.current
     Scaffold(topBar = {
-        TopAppBar(colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
+        TopAppBar(
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
             title = {
                 Text("")
             },
@@ -91,7 +92,7 @@ fun PhoneNumberScreen() {
 
 @Composable
 fun SelectCountryWithCountryCode() {
-    val viewModel: AuthViewModel = hiltViewModel()
+    val viewModel: AuthViewModel = koinViewModel()
 
     val authUiState by viewModel.authUiState.collectAsStateWithLifecycle()
 

@@ -2,7 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.devtools.ksp)
-    alias(libs.plugins.dagger.hilt.android)
+ //   alias(libs.plugins.dagger.hilt.android)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.google.gms.google.services)
     alias(libs.plugins.firebase.crashlytics)
@@ -79,10 +79,10 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
 
-    // For Hilt
+/*    // For Hilt
     implementation(libs.hilt.android)
     implementation(libs.androidx.hilt.navigation.compose)
-    ksp(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)*/
 
 
     // For Coroutines
@@ -101,6 +101,19 @@ dependencies {
     implementation(libs.firebase.storage)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)
-    implementation("com.github.TuleSimon:xMaterialccp:v2.11")
+    implementation("com.google.firebase:firebase-functions-ktx:21.1.1") // Use the latest version
+
+
+    implementation(libs.xmaterialccp)
+
+
+
+    implementation(libs.koin.core)
+    implementation(libs.koin.androidx.compose)
+    implementation(libs.koin.android)
+
+    implementation (libs.glide.compose)
+
+
 
 }
