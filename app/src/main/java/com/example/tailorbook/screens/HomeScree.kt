@@ -3,6 +3,7 @@ package com.example.tailorbook.screens
 import android.graphics.BitmapFactory
 import android.util.Base64
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -130,7 +131,11 @@ fun HomeScreen() {
                             contentPadding = PaddingValues(16.dp)
                         ) {
                             items(state.users) { user ->
-                                UserListItem(user)
+                                UserListItem(user) {
+                                    navController.navigate(
+                                        Navigation.CustomerProfile(user.userid)
+                                    )
+                                }
                             }
                         }
                     }
@@ -150,10 +155,13 @@ fun HomeScreen() {
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun UserListItem(user: User) {
+fun UserListItem(user: User, onClick: () -> Unit = {}) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable {
+                onClick.invoke()
+            }
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

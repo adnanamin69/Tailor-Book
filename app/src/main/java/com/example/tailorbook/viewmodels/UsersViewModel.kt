@@ -105,6 +105,26 @@ class UsersViewModel : ViewModel() {
         _addCustomerSuccess.value = false
     }
 
+    fun updateCustomer(customerId: String, name: String, phone: String, imageBase64: String?) {
+        viewModelScope.launch {
+            try {
+                val uid = FirebaseAuth.getInstance().uid ?: return@launch
+                val customers = FirebaseFirestore.getInstance()
+                    .collection("users").document(uid)
+                    .collection("customers")
+                val docRef = customers.document(customerId)
+                val data = hashMapOf(
+                    "name" to name,
+                    "phone" to phone,
+                    "image" to (imageBase64 ?: "")
+                )
+                docRef.set(data).await()
+                fetchUsers()
+            } catch (_: Exception) {
+            }
+        }
+    }
+
 
     private fun fetchUsers() {
         viewModelScope.launch {

@@ -4,6 +4,10 @@ import android.app.Application
 import com.example.tailorbook.auth.AuthViewModel
 import com.example.tailorbook.auth.PhoneAuthHandler
 import com.example.tailorbook.viewmodels.UsersViewModel
+import com.example.tailorbook.viewmodels.MeasurementsViewModel
+import com.example.tailorbook.viewmodels.OrdersViewModel
+import com.example.tailorbook.viewmodels.PaymentsViewModel
+import com.example.tailorbook.viewmodels.DashboardViewModel
 import com.google.firebase.auth.FirebaseAuth
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -29,5 +33,9 @@ val appModule = module {
     viewModel { AuthViewModel(get()) }
     single { FirebaseAuth.getInstance() }
     single { PhoneAuthHandler(get()) }
+    viewModel { MeasurementsViewModel() }
+    viewModel { OrdersViewModel() }
+    viewModel { PaymentsViewModel() }
+    viewModel { DashboardViewModel() }
 
 }
