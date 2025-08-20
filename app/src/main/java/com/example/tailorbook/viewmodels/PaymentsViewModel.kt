@@ -58,7 +58,10 @@ class PaymentsViewModel : ViewModel() {
                 _error.value = null
                 _isLoading.value = true
                 val uid = FirebaseAuth.getInstance().uid ?: return@launch
-                val col = FirebaseFirestore.getInstance()
+
+                val db = FirebaseFirestore.getInstance()
+
+                val col = db
                     .collection("users").document(uid)
                     .collection("customers").document(customerId)
                     .collection("orders").document(orderId)
@@ -68,6 +71,23 @@ class PaymentsViewModel : ViewModel() {
                     "date" to date
                 )
                 col.add(data).await()
+
+
+                // ✅ increment order.totalPaid
+                val orderRef = db.collection("users").document(uid)
+                    .collection("customers").document(customerId)
+                    .collection("orders").document(orderId)
+
+                orderRef.update(
+                    "totalPaid",
+                    com.google.firebase.firestore.FieldValue.increment(amount)
+                )
+                    .await()
+
+
+
+
+
                 _saveSuccess.value = true
                 fetchPayments(customerId, orderId)
                 _isLoading.value = false
@@ -77,6 +97,7 @@ class PaymentsViewModel : ViewModel() {
             }
         }
     }
+
 }
 
 

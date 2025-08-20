@@ -102,6 +102,7 @@ fun OrdersScreen(customerId: String) {
             }) { o ->
                 OrderCard(
                     order = o,
+                    cId = customerId,
                     onDetailsClick = {
                         nav.navigate(Navigation.OrderDetails(customerId, o.id))
                     },
@@ -120,10 +121,19 @@ fun OrdersScreen(customerId: String) {
 @Composable
 fun OrderCard(
     order: Order,
+    cId: String,
     onDetailsClick: () -> Unit,
     onPaymentsClick: () -> Unit,
     onStatusChange: (OrderStatus) -> Unit
 ) {
+    /* val viewModel: PaymentsViewModel = koinViewModel()
+
+     LaunchedEffect(order.id) {
+         viewModel.fetchPayments(cId, order.id)
+     }
+ */
+
+
     var expanded by remember { mutableStateOf(false) }
 
     Card(
@@ -230,7 +240,7 @@ fun OrderCard(
                 Column {
                     Text("Total Due", style = MaterialTheme.typography.labelSmall)
                     Text(
-                        "RS ${order.totalDue}",
+                        "RS ${order.totalDue - order.totalPaid}",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -253,7 +263,8 @@ fun OrderCard(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedButton(onClick = onDetailsClick) { Text("Details") }
-                Button(onClick = onPaymentsClick) { Text("Payments") }
+                if (order.totalDue > order.totalPaid)
+                    Button(onClick = onPaymentsClick) { Text("Payments") }
             }
         }
     }
@@ -417,7 +428,7 @@ fun OrderFormScreen(
                         deliveryDate = deliveryMillis ?: 0L,
                         status = status,
                         totalDue = due.toDoubleOrNull() ?: 0.0,
-                        totalPaid = paid.toDoubleOrNull() ?: 0.0
+                        totalPaid = 0.0
                     )
 
                     val currentTime = System.currentTimeMillis()
