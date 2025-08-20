@@ -10,5 +10,6 @@ data class Measurement(
     val chest: String = "",
     val lap: String = "",
     val pant: String = "",
-    val panch: String = ""
+    val panch: String = "",
+    val extra: String
 )

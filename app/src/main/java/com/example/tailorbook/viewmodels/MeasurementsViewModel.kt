@@ -51,6 +51,7 @@ class MeasurementsViewModel : ViewModel() {
                         lap = d.getString("lap") ?: "",
                         pant = d.getString("pant") ?: "",
                         panch = d.getString("panch") ?: "",
+                        extra = d.getString("extra") ?: ""
                     )
                 }
                 _isLoading.value = false

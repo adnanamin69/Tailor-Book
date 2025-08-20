@@ -1,25 +1,23 @@
 package com.example.tailorbook.routes
 
-
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
-import com.example.tailorbook.models.User
 import com.example.tailorbook.screens.AddMeasurementScreen
 import com.example.tailorbook.screens.CustomerFormPage
+import com.example.tailorbook.screens.CustomerProfileScreen
+import com.example.tailorbook.screens.DashboardScreen
+import com.example.tailorbook.screens.EditCustomerScreen
 import com.example.tailorbook.screens.HomeScreen
+import com.example.tailorbook.screens.OrderDetailsScreen
+import com.example.tailorbook.screens.OrderFormScreen
+import com.example.tailorbook.screens.OrdersScreen
+import com.example.tailorbook.screens.PaymentsScreen
 import com.example.tailorbook.screens.PhoneNumberScreen
 import com.example.tailorbook.screens.SplashScreen
-import com.example.tailorbook.screens.DashboardScreen
-import com.example.tailorbook.screens.CustomerProfileScreen
-import com.example.tailorbook.screens.OrdersScreen
-import com.example.tailorbook.screens.OrderFormScreen
-import com.example.tailorbook.screens.OrderDetailsScreen
-import com.example.tailorbook.screens.PaymentsScreen
-import com.example.tailorbook.screens.EditCustomerScreen
 import com.example.tailorbook.viewmodels.UserListIntent
 import com.example.tailorbook.viewmodels.UserListState
 import kotlinx.coroutines.flow.StateFlow

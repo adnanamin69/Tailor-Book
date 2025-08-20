@@ -272,7 +272,7 @@ fun OrderCard(
 
 
 @Composable
-private fun formatDate(timestamp: Long): String {
+fun formatDate(timestamp: Long): String {
     if (timestamp == 0L) return "-"
     val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
     return sdf.format(Date(timestamp))
