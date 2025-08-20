@@ -13,8 +13,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -33,6 +37,7 @@ import com.example.tailorbook.components.LocalProviderWrapper
 import com.example.tailorbook.models.User
 import com.example.tailorbook.routes.NavHostManager
 import com.example.tailorbook.routes.NavHostManager.LocalNavController
+import com.example.tailorbook.routes.Navigation
 import com.example.tailorbook.viewmodels.UserListIntent
 import com.example.tailorbook.viewmodels.UserListState
 
@@ -46,31 +51,43 @@ fun HomeScreen() {
 
     val state = NavHostManager.LocalMainViewModelState.current.collectAsState().value
     val handleIntent = NavHostManager.LocalUserSearch.current
-    Scaffold(topBar = {
+    Scaffold(
 
-        Column {
-            TopAppBar(title = { Text("User List") })
-            if (state is UserListState.Success) {
-                SearchBar(
-                    query = state.searchQuery,
-                    onQueryChanged = { handleIntent(UserListIntent.SearchUsers(it)) }
-                )
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+
+                    navController.navigate(Navigation.AddUSer)
+                }
+            ) {
+                Icon(Icons.Filled.Add, "")
             }
-        }
+        },
+        topBar = {
 
-        /*  TopAppBar(
-              colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
-              title = {
-                  Text("")
-              },
+            Column {
+                TopAppBar(title = { Text("User List") })
+                if (state is UserListState.Success) {
+                    SearchBar(
+                        query = state.searchQuery,
+                        onQueryChanged = { handleIntent(UserListIntent.SearchUsers(it)) }
+                    )
+                }
+            }
+
+            /*  TopAppBar(
+                  colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
+                  title = {
+                      Text("")
+                  },
 
 
-              actions = {
+                  actions = {
 
-              }
+                  }
 
-          )*/
-    }) {
+              )*/
+        }) {
 
 
         Box(modifier = Modifier.padding(it)) {

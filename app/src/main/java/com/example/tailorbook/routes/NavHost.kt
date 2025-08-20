@@ -7,6 +7,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.tailorbook.models.User
+import com.example.tailorbook.screens.CustomerFormPage
 import com.example.tailorbook.screens.HomeScreen
 import com.example.tailorbook.screens.PhoneNumberScreen
 import com.example.tailorbook.screens.SplashScreen
@@ -43,6 +44,10 @@ object NavHostManager {
             }
             composable<Navigation.Home> {
                 HomeScreen()
+            }
+
+            composable<Navigation.AddUSer> {
+                CustomerFormPage()
             }
 
 

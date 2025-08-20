@@ -1,5 +1,7 @@
 package com.example.tailorbook.viewmodels
 
+import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tailorbook.models.User
@@ -9,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.util.UUID
 
 private const val TAG = "UsersViewModel"
 
@@ -28,8 +31,38 @@ class UsersViewModel : ViewModel() {
         when (intent) {
             is UserListIntent.LoadUsers -> fetchUsers()
             is UserListIntent.SearchUsers -> filterUsers(intent.query)
+            is UserListIntent.UploadImage -> uploadImage(intent)
         }
     }
+
+    private fun uploadImage(intent: UserListIntent.UploadImage) {
+
+
+        val userData = hashMapOf(
+            "name" to intent.name,
+            "phone" to intent.phone,
+            "address" to intent.address,
+            // "imageUrl" to uri.toString()
+        )
+        FirebaseFirestore.getInstance().collection("users").document(
+            FirebaseAuth.getInstance().uid.toString()
+        ).collection("customers").add(userData)
+
+
+        /*  val storageRef =
+              com.google.firebase.storage.FirebaseStorage.getInstance().reference.child("images/${UUID.randomUUID()}.jpg")
+          val uploadTask = storageRef.putFile(intent.uri)
+
+          uploadTask.addOnSuccessListener {
+              storageRef.downloadUrl.addOnSuccessListener { uri ->
+
+                  Log.i(TAG, "uploadData: ${uri.toString()}")
+
+
+              }
+          }*/
+    }
+
 
     private fun fetchUsers() {
         viewModelScope.launch {
@@ -76,5 +109,8 @@ sealed class UserListState {
 
 sealed class UserListIntent {
     object LoadUsers : UserListIntent()
+    data class UploadImage(val name: String, val phone: String, val address: String) :
+        UserListIntent()
+
     data class SearchUsers(val query: String) : UserListIntent()
 }
