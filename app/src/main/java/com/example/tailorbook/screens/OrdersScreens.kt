@@ -1,23 +1,47 @@
 package com.example.tailorbook.screens
 
+
 import android.app.TimePickerDialog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.DoneAll
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Button
-import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -26,9 +50,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tailorbook.models.Order
@@ -36,9 +63,11 @@ import com.example.tailorbook.models.OrderStatus
 import com.example.tailorbook.routes.NavHostManager
 import com.example.tailorbook.routes.Navigation
 import com.example.tailorbook.viewmodels.OrdersViewModel
+import com.example.tailorbook.viewmodels.PaymentsViewModel
 import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,46 +79,196 @@ fun OrdersScreen(customerId: String) {
 
     LaunchedEffect(customerId) { viewModel.fetchOrders(customerId) }
 
-    Scaffold(topBar = {
-        TopAppBar(
-            title = { Text("Orders") },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-        )
-    }) { padding ->
-        val nav = NavHostManager.LocalNavController.current
+    val nav = NavHostManager.LocalNavController.current
+
+
+    if (isLoading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+    } else {
         LazyColumn(
             modifier = Modifier
-                .padding(padding)
                 .fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(orders) { o ->
-                Text(
-                    "${o.dressType} - ${o.status} - Due: ${o.totalDue} Paid: ${o.totalPaid}",
+            items(orders, key = {
+                it.id
+            }) { o ->
+                OrderCard(
+                    order = o,
+                    onDetailsClick = {
+                        nav.navigate(Navigation.OrderDetails(customerId, o.id))
+                    },
+                    onPaymentsClick = {
+                        nav.navigate(Navigation.Payments(customerId, o.id))
+                    }, {
+                        val updatedOrder = o.copy(status = it)
+                        viewModel.addOrUpdateOrder(customerId, o.id, updatedOrder)
+                    }
                 )
-                Button(onClick = {
-                    nav.navigate(
-                        Navigation.OrderDetails(
-                            customerId,
-                            o.id
-                        )
-                    )
-                }) { Text("Details") }
-                Button(onClick = {
-                    nav.navigate(
-                        Navigation.Payments(
-                            customerId,
-                            o.id
-                        )
-                    )
-                }) { Text("Payments") }
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun OrderCard(
+    order: Order,
+    onDetailsClick: () -> Unit,
+    onPaymentsClick: () -> Unit,
+    onStatusChange: (OrderStatus) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+
+            // Status Row with Icon + Dropdown
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                val (icon, color) = when (order.status) {
+                    OrderStatus.PENDING -> Icons.Outlined.Schedule to Color.Gray
+                    OrderStatus.IN_PROGRESS -> Icons.Outlined.Build to Color(0xFFFB8C00)
+                    OrderStatus.COMPLETED -> Icons.Outlined.CheckCircle to Color(0xFF4CAF50)
+                    OrderStatus.DELIVERED -> Icons.Outlined.DoneAll to Color(0xFFE53935)
+                }
+
+                Icon(imageVector = icon, contentDescription = order.status.name, tint = color)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = order.status.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = color
+                )
+
+                Spacer(Modifier.weight(1f))
+
+                // 3-dot Menu
+                Box {
+                    IconButton(onClick = { expanded = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "Change Status")
+                    }
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        OrderStatus.entries.forEach { status ->
+                            DropdownMenuItem(
+                                text = { Text(status.name) },
+                                leadingIcon = {
+                                    val (sIcon, sColor) = when (status) {
+                                        OrderStatus.PENDING -> Icons.Outlined.Schedule to Color.Gray
+                                        OrderStatus.IN_PROGRESS -> Icons.Outlined.Build to Color(
+                                            0xFFFB8C00
+                                        )
+
+                                        OrderStatus.COMPLETED -> Icons.Outlined.CheckCircle to Color(
+                                            0xFF4CAF50
+                                        )
+
+                                        OrderStatus.DELIVERED -> Icons.Outlined.DoneAll to Color(
+                                            0xFFE53935
+                                        )
+                                    }
+                                    Icon(
+                                        imageVector = sIcon,
+                                        contentDescription = null,
+                                        tint = sColor
+                                    )
+                                },
+                                onClick = {
+                                    expanded = false
+                                    if (status != order.status) {
+                                        onStatusChange(status)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            // Dates
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column {
+                    Text("Check-in", style = MaterialTheme.typography.labelSmall)
+                    Text(formatDate(order.checkInDate), style = MaterialTheme.typography.bodyMedium)
+                }
+                Column {
+                    Text("Delivery", style = MaterialTheme.typography.labelSmall)
+                    Text(
+                        formatDate(order.deliveryDate),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            // Payment Info
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column {
+                    Text("Total Due", style = MaterialTheme.typography.labelSmall)
+                    Text(
+                        "RS ${order.totalDue}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Column {
+                    Text("Paid", style = MaterialTheme.typography.labelSmall)
+                    Text(
+                        "RS ${order.totalPaid}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // Actions
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedButton(onClick = onDetailsClick) { Text("Details") }
+                Button(onClick = onPaymentsClick) { Text("Payments") }
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun formatDate(timestamp: Long): String {
+    if (timestamp == 0L) return "-"
+    val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+    return sdf.format(Date(timestamp))
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun OrderFormScreen(
     customerId: String,
@@ -98,6 +277,7 @@ fun OrderFormScreen(
     onSaved: () -> Unit = {}
 ) {
     val viewModel: OrdersViewModel = koinViewModel()
+    val pViewModel: PaymentsViewModel = koinViewModel()
 
     var dress by remember { mutableStateOf("") }
     var due by remember { mutableStateOf("") }
@@ -105,44 +285,43 @@ fun OrderFormScreen(
 
     // Delivery timestamp
     var deliveryMillis by remember { mutableStateOf<Long?>(null) }
-    var deliveryText by remember { mutableStateOf("Pick Delivery date") }
+    var deliveryText by remember { mutableStateOf("Pick Delivery Date & Time") }
 
-    var statusExpanded by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf(OrderStatus.PENDING) }
-
     val context = LocalContext.current
 
-    Scaffold(topBar = {
-        TopAppBar(
-            title = { Text("Order Form") },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-        )
-    }) { padding ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Order Form") },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+            )
+        }
+    ) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(16.dp)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            TextField(
-                value = dress,
-                onValueChange = { dress = it },
-                label = { Text("Dress Type") },
-                modifier = Modifier.fillMaxWidth()
-            )
+            /* OutlinedTextField(
+                 value = dress,
+                 onValueChange = { dress = it },
+                 label = { Text("Dress Type") },
+                 modifier = Modifier.fillMaxWidth(),
+                 singleLine = true
+             )     */
 
             // Delivery Date & Time Picker
-            Text(
-                text = deliveryText,
+            OutlinedCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        // Open Date Picker first
                         val now = Calendar.getInstance()
                         android.app.DatePickerDialog(
                             context,
                             { _, year, month, dayOfMonth ->
-                                // After picking date → open Time Picker
                                 TimePickerDialog(
                                     context,
                                     { _, hour, minute ->
@@ -156,7 +335,7 @@ fun OrderFormScreen(
                                     },
                                     now.get(Calendar.HOUR_OF_DAY),
                                     now.get(Calendar.MINUTE),
-                                    true
+                                    false
                                 ).show()
                             },
                             now.get(Calendar.YEAR),
@@ -164,33 +343,72 @@ fun OrderFormScreen(
                             now.get(Calendar.DAY_OF_MONTH)
                         ).show()
                     }
-            )
-
-            TextField(
-                value = due,
-                onValueChange = { due = it },
-                label = { Text("Total Due") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            TextField(
-                value = paid,
-                onValueChange = { paid = it },
-                label = { Text("Total Paid") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Button(onClick = { statusExpanded = true }) { Text("Status: ${status.name}") }
-            DropdownMenu(expanded = statusExpanded, onDismissRequest = { statusExpanded = false }) {
-                OrderStatus.entries.forEach { s ->
-                    DropdownMenuItem(
-                        text = { Text(s.name) },
-                        onClick = { status = s; statusExpanded = false })
+            ) {
+                Row(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("📅 $deliveryText", style = MaterialTheme.typography.bodyMedium)
                 }
             }
 
+            // Amount fields
+            OutlinedTextField(
+                value = due,
+                onValueChange = { if (it.all { ch -> ch.isDigit() || ch == '.' }) due = it },
+                label = { Text("Total Due") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal)
+            )
+
+            OutlinedTextField(
+                value = paid,
+                onValueChange = { if (it.all { ch -> ch.isDigit() || ch == '.' }) paid = it },
+                label = { Text("Total Paid") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+            )
+
+            // Status selection as Chips/Segmented Buttons
+            Text("Order Status", style = MaterialTheme.typography.titleMedium)
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OrderStatus.entries.forEach { s ->
+                    val (icon, color) = when (s) {
+                        OrderStatus.PENDING -> Icons.Outlined.Schedule to Color.Gray
+                        OrderStatus.IN_PROGRESS -> Icons.Outlined.Build to Color(0xFFFB8C00)
+                        OrderStatus.COMPLETED -> Icons.Outlined.CheckCircle to Color(0xFF4CAF50)
+                        OrderStatus.DELIVERED -> Icons.Outlined.DoneAll to Color(0xFFE53935)
+                    }
+
+
+                    FilterChip(
+                        selected = status == s,
+                        onClick = { status = s },
+                        label = { Text(s.name) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = s.name,
+                                tint = color
+                            )
+                        },
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
             Button(
                 onClick = {
-                    val checkInMillis = System.currentTimeMillis() // Auto set current date/time
+                    val checkInMillis = System.currentTimeMillis()
                     val order = Order(
                         customerId = customerId,
                         measurementId = measurementId ?: "",
@@ -201,13 +419,30 @@ fun OrderFormScreen(
                         totalDue = due.toDoubleOrNull() ?: 0.0,
                         totalPaid = paid.toDoubleOrNull() ?: 0.0
                     )
-                    viewModel.addOrUpdateOrder(customerId, orderId, order)
+
+                    val currentTime = System.currentTimeMillis()
+
+                    viewModel.addOrUpdateOrder(customerId, orderId ?: currentTime.toString(), order)
+                    if (paid.isNotEmpty())
+                        pViewModel.addPayment(
+                            customerId,
+                            orderId ?: currentTime.toString(),
+                            paid.toDoubleOrNull() ?: 0.0,
+                            System.currentTimeMillis() // use current date-time
+                        )
+
                     onSaved()
                 },
-                modifier = Modifier.fillMaxWidth()
-            ) { Text("Save") }
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text("💾 Save Order", style = MaterialTheme.typography.titleMedium)
+            }
         }
     }
 }
+
 
 

@@ -28,10 +28,10 @@ class OrdersViewModel : ViewModel() {
     private val _selectedOrder = MutableStateFlow<Order?>(null)
     val selectedOrder: StateFlow<Order?> = _selectedOrder.asStateFlow()
 
-    fun fetchOrders(customerId: String) {
+    fun fetchOrders(customerId: String, isLoad: Boolean = true) {
         viewModelScope.launch {
             try {
-                _isLoading.value = true
+                _isLoading.value = isLoad
                 _error.value = null
                 val uid = FirebaseAuth.getInstance().uid ?: return@launch
                 val snapshot = FirebaseFirestore.getInstance()
@@ -47,7 +47,11 @@ class OrdersViewModel : ViewModel() {
                         dressType = d.getString("dressType") ?: "",
                         checkInDate = d.getLong("checkInDate") ?: 0L,
                         deliveryDate = d.getLong("deliveryDate") ?: 0L,
-                        status = runCatching { OrderStatus.valueOf(d.getString("status") ?: "PENDING") }.getOrDefault(OrderStatus.PENDING),
+                        status = runCatching {
+                            OrderStatus.valueOf(
+                                d.getString("status") ?: "PENDING"
+                            )
+                        }.getOrDefault(OrderStatus.PENDING),
                         totalDue = (d.getDouble("totalDue") ?: 0.0),
                         totalPaid = (d.getDouble("totalPaid") ?: 0.0)
                     )
@@ -60,12 +64,12 @@ class OrdersViewModel : ViewModel() {
         }
     }
 
-    fun addOrUpdateOrder(customerId: String, orderId: String?, order: Order) {
+    fun addOrUpdateOrder(customerId: String, orderId: String, order: Order) {
         viewModelScope.launch {
             try {
                 _saveSuccess.value = false
                 _error.value = null
-                _isLoading.value = true
+                //_isLoading.value = true
                 val uid = FirebaseAuth.getInstance().uid ?: return@launch
                 val col = FirebaseFirestore.getInstance()
                     .collection("users").document(uid)
@@ -81,9 +85,10 @@ class OrdersViewModel : ViewModel() {
                     "totalDue" to order.totalDue,
                     "totalPaid" to order.totalPaid
                 )
-                if (orderId == null) col.add(data).await() else col.document(orderId).set(data).await()
+                col.document(orderId).set(data)
+                    .await()
                 _saveSuccess.value = true
-                fetchOrders(customerId)
+                fetchOrders(customerId, false)
                 _isLoading.value = false
             } catch (e: Exception) {
                 _error.value = e.localizedMessage
@@ -109,7 +114,11 @@ class OrdersViewModel : ViewModel() {
                         dressType = d.getString("dressType") ?: "",
                         checkInDate = d.getLong("checkInDate") ?: 0L,
                         deliveryDate = d.getLong("deliveryDate") ?: 0L,
-                        status = runCatching { OrderStatus.valueOf(d.getString("status") ?: "PENDING") }.getOrDefault(OrderStatus.PENDING),
+                        status = runCatching {
+                            OrderStatus.valueOf(
+                                d.getString("status") ?: "PENDING"
+                            )
+                        }.getOrDefault(OrderStatus.PENDING),
                         totalDue = (d.getDouble("totalDue") ?: 0.0),
                         totalPaid = (d.getDouble("totalPaid") ?: 0.0)
                     )
