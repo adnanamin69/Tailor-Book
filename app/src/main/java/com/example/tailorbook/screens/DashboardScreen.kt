@@ -175,38 +175,7 @@ private fun CreativeDashboardTopBar() {
                 }
 
                 // Animated dashboard icon
-                val scale by rememberInfiniteTransition(label = "icon").animateFloat(
-                    initialValue = 1f,
-                    targetValue = 1.1f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(2000, easing = FastOutSlowInEasing),
-                        repeatMode = RepeatMode.Reverse
-                    ),
-                    label = "iconScale"
-                )
 
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .graphicsLayer(scaleX = scale, scaleY = scale)
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(
-                                    Color(0xFF667eea),
-                                    Color(0xFF764ba2)
-                                )
-                            ),
-                            CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Default.Dashboard,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
             }
         }
     }

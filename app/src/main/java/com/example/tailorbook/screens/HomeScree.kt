@@ -207,23 +207,62 @@ private fun CreativeTopBar(
                         )
                     }
 
-                    Button(
-                        onClick = { navController.navigate(Navigation.Dashboard) },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.White.copy(alpha = 0.2f),
-                            contentColor = Color.White
+
+                    val scale by rememberInfiniteTransition(label = "icon").animateFloat(
+                        initialValue = 1f,
+                        targetValue = 1.1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(2000, easing = FastOutSlowInEasing),
+                            repeatMode = RepeatMode.Reverse
                         ),
-                        shape = RoundedCornerShape(20.dp),
-                        modifier = Modifier.shadow(4.dp, RoundedCornerShape(20.dp))
+                        label = "iconScale"
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .graphicsLayer(scaleX = scale, scaleY = scale)
+                            .clip(CircleShape)
+                            .clickable {
+                                navController.navigate(Navigation.Dashboard)
+                            }
+                            .background(
+                                Brush.radialGradient(
+                                    colors = listOf(
+                                        Color(0xffdf3939),
+                                        Color(0xffb87070)
+                                    )
+                                ),
+                                CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             Icons.Default.Dashboard,
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp)
+                            tint = Color.White,
+                            modifier = Modifier.size(28.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Dashboard", fontWeight = FontWeight.SemiBold)
                     }
+
+                    /*
+                       Button(
+                           onClick = { navController.navigate(Navigation.Dashboard) },
+                           colors = ButtonDefaults.buttonColors(
+                               containerColor = Color.White.copy(alpha = 0.2f),
+                               contentColor = Color.White
+                           ),
+                           shape = RoundedCornerShape(20.dp),
+                           modifier = Modifier.shadow(4.dp, RoundedCornerShape(20.dp))
+                       ) {
+                           Icon(
+                               Icons.Default.Dashboard,
+                               contentDescription = null,
+                               modifier = Modifier.size(18.dp)
+                           )
+                           Spacer(modifier = Modifier.width(8.dp))
+                           Text("Dashboard", fontWeight = FontWeight.SemiBold)
+                       }*/
                 }
             }
         }
