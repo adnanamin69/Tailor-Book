@@ -26,6 +26,12 @@ object NavHostManager {
     val LocalMainViewModelState =
         compositionLocalOf<StateFlow<UserListState>> { error("ViewModel state not found") }
 
+    val LocalAddCustomerError =
+        compositionLocalOf<StateFlow<String?>> { error("Add customer error flow not found") }
+
+    val LocalAddCustomerSuccess =
+        compositionLocalOf<StateFlow<Boolean>> { error("Add customer success flow not found") }
+
 
     @Composable
     fun SetupNavHost(

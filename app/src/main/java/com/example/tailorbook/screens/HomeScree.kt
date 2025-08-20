@@ -1,5 +1,8 @@
 package com.example.tailorbook.screens
 
+import android.graphics.BitmapFactory
+import android.util.Base64
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.CircularProgressIndicator
@@ -24,10 +28,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -66,7 +74,13 @@ fun HomeScreen() {
         topBar = {
 
             Column {
-                TopAppBar(title = { Text("User List") })
+                val titleText = if (state is UserListState.Success) {
+                    "Customers (" + state.users.size + ")"
+                } else "Customers"
+                TopAppBar(
+                    title = { Text(titleText) },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                )
                 if (state is UserListState.Success) {
                     SearchBar(
                         query = state.searchQuery,
@@ -90,18 +104,34 @@ fun HomeScreen() {
         }) {
 
 
-        Box(modifier = Modifier.padding(it)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(it)
+        ) {
             when (state) {
-                is UserListState.Loading -> CircularProgressIndicator(modifier = Modifier.fillMaxSize())
-                is UserListState.Success -> {
-                    LazyColumn(
-                        modifier = Modifier.padding(it),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(16.dp)
-                    ) {
+                is UserListState.Loading -> Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) { CircularProgressIndicator() }
 
-                        items(state.users) { user ->
-                            UserListItem(user)
+                is UserListState.Success -> {
+                    if (state.users.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(text = "No customers yet. Tap + to add.")
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(16.dp)
+                        ) {
+                            items(state.users) { user ->
+                                UserListItem(user)
+                            }
                         }
                     }
                 }
@@ -127,9 +157,36 @@ fun UserListItem(user: User) {
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-
-
-        GlideImage(user.img, contentDescription = "", modifier = Modifier.size(50.dp))
+        val isLikelyBase64 = user.img.isNotBlank() && !user.img.startsWith("http", true)
+        if (isLikelyBase64) {
+            val bytes = runCatching { Base64.decode(user.img, Base64.DEFAULT) }.getOrNull()
+            val bmp = bytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
+            if (bmp != null) {
+                Image(
+                    bitmap = bmp.asImageBitmap(),
+                    contentDescription = "",
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(CircleShape)
+                )
+            } else {
+                GlideImage(
+                    user.img,
+                    contentDescription = "",
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(CircleShape)
+                )
+            }
+        } else {
+            GlideImage(
+                user.img,
+                contentDescription = "",
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(CircleShape)
+            )
+        }
 
 
         Spacer(modifier = Modifier.width(8.dp))

@@ -16,6 +16,8 @@ import androidx.navigation.compose.rememberNavController
 import com.example.tailorbook.routes.NavHostManager
 import com.example.tailorbook.routes.NavHostManager.LocalUserSearch
 import com.example.tailorbook.routes.NavHostManager.SetupNavHost
+import com.example.tailorbook.routes.NavHostManager.LocalAddCustomerError
+import com.example.tailorbook.routes.NavHostManager.LocalAddCustomerSuccess
 import com.example.tailorbook.ui.theme.TailorBookTheme
 import com.example.tailorbook.viewmodels.UsersViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -34,7 +36,9 @@ class MainActivity : ComponentActivity() {
                     CompositionLocalProvider(
                         NavHostManager.LocalNavController provides rememberNavController(),
                         NavHostManager.LocalMainViewModelState provides mainViewModel.state,
-                        LocalUserSearch provides mainViewModel::handleIntent
+                        LocalUserSearch provides mainViewModel::handleIntent,
+                        LocalAddCustomerError provides mainViewModel.addCustomerError,
+                        LocalAddCustomerSuccess provides mainViewModel.addCustomerSuccess
                     ) {
                         SetupNavHost()
                     }

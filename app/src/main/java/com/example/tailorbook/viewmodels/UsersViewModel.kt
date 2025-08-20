@@ -1,14 +1,15 @@
 package com.example.tailorbook.viewmodels
 
-import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tailorbook.models.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
@@ -21,6 +22,16 @@ class UsersViewModel : ViewModel() {
     val state: StateFlow<UserListState> = _state
 
     private val _allUsers = MutableStateFlow<List<User>>(emptyList())
+
+    // Add-customer operation status
+    private val _addCustomerError = MutableStateFlow<String?>(null)
+    val addCustomerError = _addCustomerError.asStateFlow()
+
+    private val _addCustomerSuccess = MutableStateFlow(false)
+    val addCustomerSuccess = _addCustomerSuccess.asStateFlow()
+
+    private val _isAddingCustomer = MutableStateFlow(false)
+    val isAddingCustomer = _isAddingCustomer.asStateFlow()
 
     init {
         handleIntent(UserListIntent.LoadUsers)
@@ -36,31 +47,62 @@ class UsersViewModel : ViewModel() {
     }
 
     private fun uploadImage(intent: UserListIntent.UploadImage) {
+        viewModelScope.launch {
+            try {
+                _isAddingCustomer.value = true
+                _addCustomerError.value = null
+                _addCustomerSuccess.value = false
 
+                val name = intent.name.trim()
+                val phone = intent.phone.trim()
+                val address = intent.address.trim()
+                val imageBase64 = intent.imageBase64?.trim().orEmpty()
 
-        val userData = hashMapOf(
-            "name" to intent.name,
-            "phone" to intent.phone,
-            "address" to intent.address,
-            // "imageUrl" to uri.toString()
-        )
-        FirebaseFirestore.getInstance().collection("users").document(
-            FirebaseAuth.getInstance().uid.toString()
-        ).collection("customers").add(userData)
+                if (name.isEmpty() || phone.isEmpty()) {
+                    _addCustomerError.value = "Name and phone are required"
+                    return@launch
+                }
 
+                val userData = hashMapOf(
+                    "name" to name,
+                    "phone" to phone,
+                    "address" to address,
+                    "image" to imageBase64
+                )
 
-        /*  val storageRef =
-              com.google.firebase.storage.FirebaseStorage.getInstance().reference.child("images/${UUID.randomUUID()}.jpg")
-          val uploadTask = storageRef.putFile(intent.uri)
+                val uid = FirebaseAuth.getInstance().uid ?: run {
+                    _addCustomerError.value = "Not signed in"
+                    _isAddingCustomer.value = false
+                    return@launch
+                }
 
-          uploadTask.addOnSuccessListener {
-              storageRef.downloadUrl.addOnSuccessListener { uri ->
+                val customers = FirebaseFirestore.getInstance()
+                    .collection("users").document(uid)
+                    .collection("customers")
 
-                  Log.i(TAG, "uploadData: ${uri.toString()}")
+                // Use phone number as document ID to enforce uniqueness
+                val docRef = customers.document(phone)
+                val existing = docRef.get().await()
+                if (existing.exists()) {
+                    _addCustomerError.value = "Customer with this phone already exists"
+                    _isAddingCustomer.value = false
+                    return@launch
+                }
 
+                docRef.set(userData).await()
+                _addCustomerSuccess.value = true
+                fetchUsers()
+                _isAddingCustomer.value = false
+            } catch (e: Exception) {
+                _addCustomerError.value = e.localizedMessage ?: "Unexpected error"
+                _isAddingCustomer.value = false
+            }
+        }
+    }
 
-              }
-          }*/
+    fun clearAddCustomerStatus() {
+        _addCustomerError.value = null
+        _addCustomerSuccess.value = false
     }
 
 
@@ -109,7 +151,7 @@ sealed class UserListState {
 
 sealed class UserListIntent {
     object LoadUsers : UserListIntent()
-    data class UploadImage(val name: String, val phone: String, val address: String) :
+    data class UploadImage(val name: String, val phone: String, val address: String, val imageBase64: String?) :
         UserListIntent()
 
     data class SearchUsers(val query: String) : UserListIntent()
