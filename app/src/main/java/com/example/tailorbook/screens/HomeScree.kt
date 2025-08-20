@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -61,7 +62,6 @@ fun HomeScreen() {
     val state = NavHostManager.LocalMainViewModelState.current.collectAsState().value
     val handleIntent = NavHostManager.LocalUserSearch.current
     Scaffold(
-
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
@@ -72,14 +72,20 @@ fun HomeScreen() {
                 Icon(Icons.Filled.Add, "")
             }
         },
-        topBar = {
 
+
+        topBar = {
             Column {
                 val titleText = if (state is UserListState.Success) {
                     "Customers (" + state.users.size + ")"
                 } else "Customers"
                 TopAppBar(
                     title = { Text(titleText) },
+                    actions = {
+                        Button({ navController.navigate(Navigation.Dashboard) }) {
+                            Text("DashBoard")
+                        }
+                    },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
                 )
                 if (state is UserListState.Success) {
@@ -102,7 +108,8 @@ fun HomeScreen() {
                   }
 
               )*/
-        }) {
+        },
+    ) {
 
 
         Box(
