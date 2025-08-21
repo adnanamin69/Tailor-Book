@@ -1,5 +1,6 @@
 package com.example.tailorbook.screens
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -50,6 +51,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -58,6 +61,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,20 +79,36 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tailorbook.models.Measurement
 import com.example.tailorbook.routes.NavHostManager.LocalNavController
 import com.example.tailorbook.viewmodels.MeasurementsViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import kotlin.collections.chunked
 
+private const val TAG = "AddMeaurement"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddMeasurementScreen(customerId: String) {
     val viewModel: MeasurementsViewModel = koinViewModel()
     val list by viewModel.measurements.collectAsStateWithLifecycle()
+    val saved by viewModel.addSuccess.collectAsStateWithLifecycle(false)
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val navController = LocalNavController.current
     LaunchedEffect(customerId) { viewModel.fetchMeasurements(customerId) }
+    LaunchedEffect(saved) {
+
+        Log.i("AddMeaurement", "AddMeasurementScreen: $saved")
+        if (saved) {
+            snackbarHostState.showSnackbar("✅ Measurements added successfully!")
+            scope.launch(Dispatchers.Main) {
+                navController.navigateUp()
+            }
+        }
+    }
 
     val context = LocalContext.current
-    val navController = LocalNavController.current
 
     var shirtLength by remember { mutableStateOf("") }
     var shirtArm by remember { mutableStateOf("") }
@@ -141,7 +161,19 @@ fun AddMeasurementScreen(customerId: String) {
             containerColor = Color.Transparent, topBar = {
                 BeautifulMeasurementTopBar(
                     onBackClick = { navController.navigateUp() })
-            }) { paddingValues ->
+            },
+
+            snackbarHost = {
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    snackbar = { data ->
+                        CustomSnackbar(data)
+                    }
+                )
+            }
+
+
+        ) { paddingValues ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()

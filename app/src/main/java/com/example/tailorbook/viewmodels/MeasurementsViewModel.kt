@@ -81,7 +81,8 @@ class MeasurementsViewModel : ViewModel() {
                     "chest" to m.chest,
                     "lap" to m.lap,
                     "pant" to m.pant,
-                    "panch" to m.panch
+                    "panch" to m.panch,
+                    "extra" to m.extra
                 )
                 FirebaseFirestore.getInstance()
                     .collection("users").document(uid)

@@ -42,7 +42,9 @@ import com.example.tailorbook.routes.NavHostManager
 import com.example.tailorbook.routes.NavHostManager.LocalNavController
 import com.example.tailorbook.viewmodels.UserListIntent
 import com.example.tailorbook.viewmodels.UsersViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -156,7 +158,7 @@ fun CustomerFormPage() {
         ),
         label = "backgroundOffset"
     )
-
+    val scope = rememberCoroutineScope()
     LaunchedEffect(addSuccess) {
         if (addSuccess) {
             snackbarHostState.showSnackbar("✅ Customer added successfully!")
@@ -164,6 +166,9 @@ fun CustomerFormPage() {
             phone = ""
             address = ""
             viewModel.clearAddCustomerStatus()
+            scope.launch(Dispatchers.Main) {
+                navController.navigateUp()
+            }
         }
     }
 
@@ -785,7 +790,7 @@ private fun AnimatedSubmitButton(
 }
 
 @Composable
-private fun CustomSnackbar(data: SnackbarData) {
+fun CustomSnackbar(data: SnackbarData) {
     Card(
         modifier = Modifier
             .padding(16.dp)

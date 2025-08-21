@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.CropFree
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Height
 import androidx.compose.material.icons.filled.LinearScale
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.Person
@@ -591,6 +592,16 @@ private fun BeautifulMeasurementDashboard(measurement: Measurement) {
                         }
                     }
                 }
+
+                BeautifulMeasurementCard(
+                    label = "Extra",
+                    value = measurement.extra,
+                    icon = Icons.Default.Menu,
+                    gradient = ProfileColors.MeasurementGradients[0]
+                        ?: ProfileColors.MeasurementGradients[0]!!,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
             }
         }
     }

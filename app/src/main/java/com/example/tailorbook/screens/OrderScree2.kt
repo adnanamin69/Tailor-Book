@@ -39,13 +39,17 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,11 +59,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tailorbook.models.Order
 import com.example.tailorbook.models.OrderStatus
 import com.example.tailorbook.routes.NavHostManager
 import com.example.tailorbook.viewmodels.OrdersViewModel
 import com.example.tailorbook.viewmodels.PaymentsViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -69,13 +77,11 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun OrderFormScreen2(
-    customerId: String,
-    measurementId: String?,
-    orderId: String?,
-    onSaved: () -> Unit = {}
+    customerId: String, measurementId: String?, orderId: String?, onSaved: () -> Unit = {}
 ) {
     val viewModel: OrdersViewModel = koinViewModel()
     val pViewModel: PaymentsViewModel = koinViewModel()
+
     val navController = NavHostManager.LocalNavController.current
     var dress by remember { mutableStateOf("") }
     var due by remember { mutableStateOf("") }
@@ -90,37 +96,55 @@ fun OrderFormScreen2(
 
     val primaryGradient = Brush.linearGradient(
         colors = listOf(
-            Color(0xFF667eea),
-            Color(0xFF764ba2)
+            Color(0xFF667eea), Color(0xFF764ba2)
         )
     )
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "New Order",
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(
-                            Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
-                        )
-                    }
-                },
-                modifier = Modifier
-                    .background(primaryGradient)
-                    .statusBarsPadding(),
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-            )
+    val success by viewModel.saveSuccess.collectAsStateWithLifecycle(false)
+
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+
+
+    LaunchedEffect(success) {
+        if (success) {
+            snackbarHostState.showSnackbar("✅ Order saved successfully!")
+            due = ""
+            paid = ""
+            scope.launch(Dispatchers.Main) {
+                navController.navigateUp()
+            }
         }
-    ) { padding ->
+    }
+
+
+
+    Scaffold(topBar = {
+        TopAppBar(
+            title = {
+                Text(
+                    "New Order", fontWeight = FontWeight.Bold, color = Color.White
+                )
+            },
+            navigationIcon = {
+                IconButton(onClick = { navController.navigateUp() }) {
+                    Icon(
+                        Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White
+                    )
+                }
+            },
+            modifier = Modifier
+                .background(primaryGradient)
+                .statusBarsPadding(),
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+        )
+    }, snackbarHost = {
+        SnackbarHost(
+            hostState = snackbarHostState, snackbar = { data ->
+                CustomSnackbar(data)
+            })
+    }) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
@@ -151,8 +175,7 @@ fun OrderFormScreen2(
                                     }
                                     deliveryMillis = cal.timeInMillis
                                     val sdf = SimpleDateFormat(
-                                        "dd/MM/yy",
-                                        Locale.getDefault()
+                                        "dd/MM/yy", Locale.getDefault()
                                     )
                                     deliveryText = sdf.format(cal.time)
                                 },
@@ -164,13 +187,9 @@ fun OrderFormScreen2(
 
                             }.show()
                         }
-                        .padding(20.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                        .padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        Icons.Default.Schedule,
-                        contentDescription = null,
-                        tint = Color(0xFF667eea)
+                        Icons.Default.Schedule, contentDescription = null, tint = Color(0xFF667eea)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
@@ -244,19 +263,13 @@ fun OrderFormScreen2(
 
                                 OrderStatus.DELIVERED -> Icons.Outlined.DoneAll to Color(0xFFE53935)
                             }
-                            FilterChip(
-                                selected = status == s,
-                                onClick = { status = s },
-                                label = {
-                                    Text(
-                                        s.name.replace("_", " "),
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(icon, contentDescription = s.name, tint = color)
-                                }
-                            )
+                            FilterChip(selected = status == s, onClick = { status = s }, label = {
+                                Text(
+                                    s.name.replace("_", " "), fontWeight = FontWeight.Medium
+                                )
+                            }, leadingIcon = {
+                                Icon(icon, contentDescription = s.name, tint = color)
+                            })
                         }
                     }
                 }
@@ -285,13 +298,16 @@ fun OrderFormScreen2(
                     val currentTime = System.currentTimeMillis()
 
                     viewModel.addOrUpdateOrder(customerId, orderId ?: currentTime.toString(), order)
-                    if (paid.isNotEmpty())
+                    if (paid.isNotEmpty()) {
                         pViewModel.addPayment(
                             customerId,
                             orderId ?: currentTime.toString(),
                             paid.toDoubleOrNull() ?: 0.0,
                             System.currentTimeMillis()
                         )
+                        due = ""
+                        paid = ""
+                    }
 
                     onSaved()
                 },
