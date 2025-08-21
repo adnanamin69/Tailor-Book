@@ -14,6 +14,7 @@ import com.example.tailorbook.screens.EditCustomerScreen
 import com.example.tailorbook.screens.HomeScreen
 import com.example.tailorbook.screens.OrderDetailsScreen
 import com.example.tailorbook.screens.OrderFormScreen
+import com.example.tailorbook.screens.OrderFormScreen2
 import com.example.tailorbook.screens.OrdersScreen
 import com.example.tailorbook.screens.PaymentsScreen
 import com.example.tailorbook.screens.PhoneNumberScreen
@@ -83,7 +84,7 @@ object NavHostManager {
             }
             composable<Navigation.OrderForm> { backStackEntry ->
                 val args = backStackEntry.toRoute<Navigation.OrderForm>()
-                OrderFormScreen(args.customerId, args.measurementId, args.orderId)
+                OrderFormScreen2(args.customerId, args.measurementId, args.orderId)
             }
             composable<Navigation.OrderDetails> { backStackEntry ->
                 val args = backStackEntry.toRoute<Navigation.OrderDetails>()

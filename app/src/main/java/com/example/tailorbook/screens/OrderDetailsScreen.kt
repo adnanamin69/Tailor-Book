@@ -235,7 +235,7 @@ fun FinancialSummaryCard(
     totalDue: Double,
     totalPaid: Double,
     balance: Double,
-    onPaymentsClick: () -> Unit
+    onPaymentsClick: (() -> Unit)? = null
 ) {
     Card(
         modifier = Modifier
@@ -248,25 +248,29 @@ fun FinancialSummaryCard(
         Column(
             modifier = Modifier.padding(24.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    "Financial Summary",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2D3748)
-                )
-                IconButton(onClick = onPaymentsClick) {
-                    Icon(
-                        Icons.Default.Payment,
-                        contentDescription = "View Payments",
-                        tint = Color(0xFF667eea)
+            if (onPaymentsClick != null)
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        "Financial Summary",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2D3748)
                     )
+                    IconButton(onClick = {
+                        onPaymentsClick.invoke()
+                    }) {
+                        Icon(
+                            Icons.Default.Payment,
+                            contentDescription = "View Payments",
+                            tint = Color(0xFF667eea)
+                        )
+                    }
                 }
-            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -275,7 +279,7 @@ fun FinancialSummaryCard(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 FinancialMetric(
-                    title = "Total Due",
+                    title = "Total",
                     amount = totalDue,
                     icon = Icons.Default.Receipt,
                     color = Color(0xFF6B7280),
@@ -289,7 +293,7 @@ fun FinancialSummaryCard(
                     modifier = Modifier.weight(1f)
                 )
                 FinancialMetric(
-                    title = "Balance",
+                    title = "Due",
                     amount = balance,
                     icon = Icons.Default.AccountBalance,
                     color = if (balance > 0) Color(0xFFEF4444) else Color(0xFF10B981),
@@ -297,10 +301,12 @@ fun FinancialSummaryCard(
                 )
             }
 
-            if (balance > 0) {
+            if (balance > 0 && onPaymentsClick != null) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
-                    onClick = onPaymentsClick,
+                    onClick = {
+                        onPaymentsClick?.invoke()
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
@@ -347,9 +353,10 @@ fun FinancialMetric(
         )
         Text(
             NumberFormat.getCurrencyInstance(Locale.getDefault()).format(amount),
-            fontSize = 14.sp,
+            fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             color = color,
+            maxLines = 1,
             textAlign = TextAlign.Center
         )
     }

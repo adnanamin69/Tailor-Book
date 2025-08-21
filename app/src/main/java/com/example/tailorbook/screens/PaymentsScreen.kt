@@ -1,5 +1,6 @@
 package com.example.tailorbook.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,12 +20,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tailorbook.routes.NavHostManager
+import com.example.tailorbook.routes.Navigation
+import com.example.tailorbook.viewmodels.OrdersViewModel
 import com.example.tailorbook.viewmodels.PaymentsViewModel
 import org.koin.androidx.compose.koinViewModel
 import java.text.NumberFormat
@@ -34,11 +38,25 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PaymentsScreen(customerId: String, orderId: String) {
+    val orderViewModel: OrdersViewModel = koinViewModel()
+    val orders by orderViewModel.orders.collectAsStateWithLifecycle()
+
     val viewModel: PaymentsViewModel = koinViewModel()
     val items by viewModel.payments.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val navController = NavHostManager.LocalNavController.current
     // Calculate total payments
+
+    var totalRemaining by remember { mutableStateOf(0.0) }
+    LaunchedEffect(customerId) {
+        orderViewModel.fetchOrders(customerId)
+    }
+
+
+    LaunchedEffect(orders) {
+        totalRemaining = orders.sumOf { it.totalDue - it.totalPaid }
+    }
+
     val totalPaid = remember(items) {
         items.sumOf { it.amount }
     }
@@ -61,6 +79,8 @@ fun PaymentsScreen(customerId: String, orderId: String) {
             Color(0xFFf5576c)
         )
     )
+
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -102,52 +122,64 @@ fun PaymentsScreen(customerId: String, orderId: String) {
                     .padding(padding)
                     .fillMaxSize()
             ) {
+
                 // Total Payment Summary Card
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(cardGradient)
-                            .padding(24.dp)
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                Icons.Default.Payment,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(32.dp)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                "Total Paid",
-                                fontSize = 16.sp,
-                                color = Color.White.copy(alpha = 0.9f),
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                NumberFormat.getCurrencyInstance(Locale.getDefault())
-                                    .format(totalPaid),
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                            Text(
-                                "${items.size} payment${if (items.size != 1) "s" else ""} made",
-                                fontSize = 14.sp,
-                                color = Color.White.copy(alpha = 0.8f)
-                            )
-                        }
-                    }
-                }
+                Spacer(Modifier.size(10.dp))
+                // Financial Summary
+                FinancialSummaryCard(
+                    totalDue = totalRemaining + totalPaid,
+                    totalPaid = totalPaid,
+                    balance = totalRemaining,
+                )
+                Spacer(Modifier.size(10.dp))
+
+
+                /*  // Total Payment Summary Card
+                  Card(
+                      modifier = Modifier
+                          .fillMaxWidth()
+                          .padding(20.dp),
+                      shape = RoundedCornerShape(20.dp),
+                      elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                      colors = CardDefaults.cardColors(containerColor = Color.White)
+                  ) {
+                      Box(
+                          modifier = Modifier
+                              .fillMaxWidth()
+                              .background(cardGradient)
+                              .padding(24.dp)
+                      ) {
+                          Column(
+                              horizontalAlignment = Alignment.CenterHorizontally
+                          ) {
+                              Icon(
+                                  Icons.Default.Payment,
+                                  contentDescription = null,
+                                  tint = Color.White,
+                                  modifier = Modifier.size(32.dp)
+                              )
+                              Spacer(modifier = Modifier.height(8.dp))
+                              Text(
+                                  "Total Paid",
+                                  fontSize = 16.sp,
+                                  color = Color.White.copy(alpha = 0.9f),
+                                  fontWeight = FontWeight.Medium
+                              )
+                              Text(
+                                  NumberFormat.getCurrencyInstance(Locale.getDefault())
+                                      .format(totalPaid),
+                                  fontSize = 32.sp,
+                                  fontWeight = FontWeight.Bold,
+                                  color = Color.White
+                              )
+                              Text(
+                                  "${items.size} payment${if (items.size != 1) "s" else ""} made",
+                                  fontSize = 14.sp,
+                                  color = Color.White.copy(alpha = 0.8f)
+                              )
+                          }
+                      }
+                  }*/
 
                 if (isLoading) {
                     Box(
@@ -237,7 +269,10 @@ fun PaymentsScreen(customerId: String, orderId: String) {
 
                 // Add Payment Section
                 AddPaymentSection(
+                    totalRemaining,
                     onAddPayment = { amount ->
+
+
                         viewModel.addPayment(
                             customerId,
                             orderId,
@@ -273,29 +308,29 @@ fun ModernPaymentItem(amount: Double, date: Long) {
                 .padding(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-         /*   // Payment Icon
-            Box(
-                modifier = Modifier
-                    .size(50.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                Color(0xFF4facfe),
-                                Color(0xFF00f2fe)
-                            )
-                        )
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    Icons.Default.Payment,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-*/
+            /*   // Payment Icon
+               Box(
+                   modifier = Modifier
+                       .size(50.dp)
+                       .clip(RoundedCornerShape(12.dp))
+                       .background(
+                           Brush.linearGradient(
+                               colors = listOf(
+                                   Color(0xFF4facfe),
+                                   Color(0xFF00f2fe)
+                               )
+                           )
+                       ),
+                   contentAlignment = Alignment.Center
+               ) {
+                   Icon(
+                       Icons.Default.Payment,
+                       contentDescription = null,
+                       tint = Color.White,
+                       modifier = Modifier.size(24.dp)
+                   )
+               }
+   */
             Spacer(modifier = Modifier.width(16.dp))
 
             // Payment Details
@@ -351,9 +386,9 @@ fun ModernPaymentItem(amount: Double, date: Long) {
 }
 
 @Composable
-fun AddPaymentSection(onAddPayment: (Double) -> Unit) {
+fun AddPaymentSection(due: Double, onAddPayment: (Double) -> Unit) {
     var amount by remember { mutableStateOf("") }
-    var isExpanded by remember { mutableStateOf(false) }
+    var isExpanded by remember { mutableStateOf(true) }
 
     Card(
         modifier = Modifier
@@ -426,6 +461,9 @@ fun AddPaymentSection(onAddPayment: (Double) -> Unit) {
                     Button(
                         onClick = {
                             val amountValue = amount.toDoubleOrNull()
+
+
+
                             if (amountValue != null && amountValue > 0) {
                                 onAddPayment(amountValue)
                                 amount = ""
@@ -437,7 +475,7 @@ fun AddPaymentSection(onAddPayment: (Double) -> Unit) {
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF667eea)
                         ),
-                        enabled = amount.toDoubleOrNull()?.let { it > 0 } == true
+                        enabled = amount.toDoubleOrNull()?.let { it > 0 && it <= due } == true
                     ) {
                         Icon(
                             Icons.Default.Add,
