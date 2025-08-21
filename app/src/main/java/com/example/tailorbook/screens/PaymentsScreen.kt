@@ -1,18 +1,33 @@
 package com.example.tailorbook.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.tailorbook.routes.NavHostManager
 import com.example.tailorbook.viewmodels.PaymentsViewModel
 import org.koin.androidx.compose.koinViewModel
+import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -22,100 +37,418 @@ fun PaymentsScreen(customerId: String, orderId: String) {
     val viewModel: PaymentsViewModel = koinViewModel()
     val items by viewModel.payments.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val navController = NavHostManager.LocalNavController.current
+    // Calculate total payments
+    val totalPaid = remember(items) {
+        items.sumOf { it.amount }
+    }
 
     LaunchedEffect(orderId) {
         viewModel.fetchPayments(customerId, orderId)
     }
 
+    // Modern color scheme
+    val primaryGradient = Brush.linearGradient(
+        colors = listOf(
+            Color(0xFF667eea),
+            Color(0xFF764ba2)
+        )
+    )
+
+    val cardGradient = Brush.linearGradient(
+        colors = listOf(
+            Color(0xFFf093fb),
+            Color(0xFFf5576c)
+        )
+    )
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Payments") },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                title = {
+                    Text(
+                        "Payment History",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        navController.navigateUp()
+                    }) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .background(primaryGradient)
+                    .statusBarsPadding(),
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent
+                )
             )
         }
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
-                .padding(padding)
-                .padding(16.dp)
                 .fillMaxSize()
+                .background(Color(0xFFF8F9FA))
         ) {
-            if (isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            } else {
-                LazyColumn(
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize()
+            ) {
+                // Total Payment Summary Card
+                Card(
                     modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    contentPadding = PaddingValues(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
-                    items(items) { p ->
-                        PaymentItem(amount = p.amount, date = p.date)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(cardGradient)
+                            .padding(24.dp)
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                Icons.Default.Payment,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                "Total Paid",
+                                fontSize = 16.sp,
+                                color = Color.White.copy(alpha = 0.9f),
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                NumberFormat.getCurrencyInstance(Locale.getDefault())
+                                    .format(totalPaid),
+                                fontSize = 32.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Text(
+                                "${items.size} payment${if (items.size != 1) "s" else ""} made",
+                                fontSize = 14.sp,
+                                color = Color.White.copy(alpha = 0.8f)
+                            )
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            CircularProgressIndicator(
+                                color = Color(0xFF667eea),
+                                strokeWidth = 3.dp
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                "Loading payments...",
+                                color = Color.Gray,
+                                fontSize = 16.sp
+                            )
+                        }
+                    }
+                } else {
+                    if (items.isEmpty()) {
+                        // Empty state
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    Icons.Default.Payment,
+                                    contentDescription = null,
+                                    tint = Color.Gray.copy(alpha = 0.5f),
+                                    modifier = Modifier.size(64.dp)
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    "No payments yet",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color.Gray
+                                )
+                                Text(
+                                    "Add your first payment below",
+                                    fontSize = 14.sp,
+                                    color = Color.Gray.copy(alpha = 0.7f),
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    } else {
+                        // Payments List
+                        LazyColumn(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentPadding = PaddingValues(horizontal = 20.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            item {
+                                Text(
+                                    "Payment History",
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF2D3748),
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+                            }
+                            items(items.sortedByDescending { it.date }) { payment ->
+                                ModernPaymentItem(
+                                    amount = payment.amount,
+                                    date = payment.date
+                                )
+                            }
+                            item {
+                                Spacer(modifier = Modifier.height(20.dp))
+                            }
+                        }
+                    }
+                }
 
-                var amount by remember { mutableStateOf("") }
-
-                OutlinedTextField(
-                    value = amount,
-                    onValueChange = { if (it.all { ch -> ch.isDigit() || ch == '.' }) amount = it },
-                    label = { Text("Amount") },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Button(
-                    onClick = {
+                // Add Payment Section
+                AddPaymentSection(
+                    onAddPayment = { amount ->
                         viewModel.addPayment(
                             customerId,
                             orderId,
-                            amount.toDoubleOrNull() ?: 0.0,
-                            System.currentTimeMillis() // use current date-time
+                            amount,
+                            System.currentTimeMillis()
                         )
-                        amount = ""
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Text("Add Payment")
-                }
+                    }
+                )
             }
         }
     }
 }
 
 @Composable
-fun PaymentItem(amount: Double, date: Long) {
+fun ModernPaymentItem(amount: Double, date: Long) {
     val formattedDate = remember(date) {
-        SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date(date))
+        SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(date))
+    }
+
+    val formattedTime = remember(date) {
+        SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date(date))
     }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text("💰 Amount: $amount", style = MaterialTheme.typography.titleMedium)
-            Text(
-                "📅 Date: $formattedDate",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
-            )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+         /*   // Payment Icon
+            Box(
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                Color(0xFF4facfe),
+                                Color(0xFF00f2fe)
+                            )
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.Payment,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+*/
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Payment Details
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    NumberFormat.getCurrencyInstance(Locale.getDefault()).format(amount),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF2D3748)
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.DateRange,
+                        contentDescription = null,
+                        tint = Color.Gray,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        formattedDate,
+                        fontSize = 14.sp,
+                        color = Color.Gray,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        " • $formattedTime",
+                        fontSize = 14.sp,
+                        color = Color.Gray.copy(alpha = 0.7f)
+                    )
+                }
+            }
+
+            // Status Badge
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color(0xFF10B981).copy(alpha = 0.1f))
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    "Paid",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF10B981)
+                )
+            }
         }
     }
 }
 
+@Composable
+fun AddPaymentSection(onAddPayment: (Double) -> Unit) {
+    var amount by remember { mutableStateOf("") }
+    var isExpanded by remember { mutableStateOf(false) }
 
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(20.dp),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column {
+                    Text(
+                        "Add New Payment",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2D3748)
+                    )
+                    Text(
+                        "Record a new payment transaction",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                }
+                IconButton(
+                    onClick = { isExpanded = !isExpanded }
+                ) {
+                    Icon(
+                        if (isExpanded) Icons.Default.Close else Icons.Default.Add,
+                        contentDescription = "Add Payment",
+                        tint = Color(0xFF667eea)
+                    )
+                }
+            }
 
+            if (isExpanded) {
+                Spacer(modifier = Modifier.height(20.dp))
+
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = {
+                        if (it.all { ch -> ch.isDigit() || ch == '.' }) amount = it
+                    },
+                    label = { Text("Payment Amount") },
+                    placeholder = { Text("0.00") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
+                    ),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF667eea),
+                        focusedLabelColor = Color(0xFF667eea)
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+
+                    Button(
+                        onClick = {
+                            val amountValue = amount.toDoubleOrNull()
+                            if (amountValue != null && amountValue > 0) {
+                                onAddPayment(amountValue)
+                                amount = ""
+                                isExpanded = false
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF667eea)
+                        ),
+                        enabled = amount.toDoubleOrNull()?.let { it > 0 } == true
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Add Payment")
+                    }
+                }
+            }
+        }
+    }
+}
