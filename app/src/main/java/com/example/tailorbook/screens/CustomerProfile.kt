@@ -530,8 +530,8 @@ private fun AnimatedMeasurementCard(measurement: Measurement, index: Int) {
 @Composable
 private fun BeautifulMeasurementDashboard(measurement: Measurement) {
     val measurementItems = listOf(
-        "Shirt Length" to measurement.shirt_length.toString() to Icons.Default.Height,
-        "Shirt Arm" to measurement.shirt_arm.toString() to Icons.Default.PanTool,
+        "Length" to measurement.shirt_length.toString() to Icons.Default.Height,
+        "Arm" to measurement.shirt_arm.toString() to Icons.Default.PanTool,
         "Shoulder" to measurement.shoulder.toString() to Icons.Default.Accessibility,
         "Collar" to measurement.collar.toString() to Icons.Default.RadioButtonChecked,
         "Chest" to measurement.chest.toString() to Icons.Default.Favorite,

@@ -15,6 +15,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -28,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -99,7 +101,7 @@ fun CustomerFormPage() {
     val addError by viewModel.addCustomerError.collectAsStateWithLifecycle(null)
     val addSuccess by viewModel.addCustomerSuccess.collectAsStateWithLifecycle(false)
     val isAdding by viewModel.isAddingCustomer.collectAsStateWithLifecycle(false)
-    val handleIntent = NavHostManager.LocalUserSearch.current
+    //   val handleIntent = NavHostManager.LocalUserSearch.current
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -158,9 +160,10 @@ fun CustomerFormPage() {
     LaunchedEffect(addSuccess) {
         if (addSuccess) {
             snackbarHostState.showSnackbar("✅ Customer added successfully!")
+            name = ""
+            phone = ""
+            address = ""
             viewModel.clearAddCustomerStatus()
-            delay(1000)
-            navController.navigateUp()
         }
     }
 
@@ -259,7 +262,7 @@ fun CustomerFormPage() {
                         phoneError = if (phone.isBlank()) "Phone number is required" else null
 
                         if (nameError == null && phoneError == null && !isAdding) {
-                            handleIntent.invoke(
+                            viewModel.handleIntent(
                                 UserListIntent.UploadImage(name, phone, address, imageBase64)
                             )
                         }
@@ -599,7 +602,7 @@ private fun AnimatedFormFields(
                         label = "Full Name",
                         icon = Icons.Default.Person,
                         error = nameError,
-                        placeholder = "Enter customer's full name"
+                        placeholder = "Enter customer name"
                     )
 
                     CustomTextField(
@@ -608,7 +611,8 @@ private fun AnimatedFormFields(
                         label = "Phone Number",
                         icon = Icons.Default.Phone,
                         error = phoneError,
-                        placeholder = "+92 300 1234567"
+                        placeholder = "+92 300 1234567",
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                     )
 
                     CustomTextField(
@@ -633,12 +637,14 @@ private fun CustomTextField(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     error: String? = null,
     placeholder: String = "",
-    minLines: Int = 1
+    minLines: Int = 1,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         OutlinedTextField(
+            keyboardOptions = keyboardOptions,
             value = value,
             onValueChange = onValueChange,
             label = { Text(label) },
@@ -661,8 +667,8 @@ private fun CustomTextField(
                 errorBorderColor = MaterialTheme.colorScheme.error,
                 focusedLabelColor = Color(0xFF667eea),
                 focusedContainerColor = Color.White.copy(alpha = 0.8f),
-                unfocusedTextColor = Color.White.copy(alpha = 0.8f)
-            )
+
+                )
         )
 
         if (error != null) {

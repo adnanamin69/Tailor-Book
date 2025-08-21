@@ -7,11 +7,9 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -43,7 +41,7 @@ import com.example.tailorbook.routes.NavHostManager.LocalNavController
 import com.example.tailorbook.routes.Navigation
 import com.example.tailorbook.viewmodels.UserListIntent
 import com.example.tailorbook.viewmodels.UserListState
-import kotlinx.coroutines.delay
+
 
 // Custom color scheme
 object TailorColors {
@@ -298,7 +296,7 @@ private fun CreativeSearchBar(query: String, onQueryChanged: (String) -> Unit) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -383,15 +381,24 @@ private fun SuccessContent(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp)
         ) {
-            items(state.users.size) { index ->
+            items(state.users.size, key = {
+                state.users[it].userid
+            }) { index ->
                 val user = state.users[index]
-                AnimatedListItem(
-                    user = user,
-                    index = index,
-                    onClick = {
-                        navController.navigate(Navigation.CustomerProfile(user.userid))
-                    }
-                )
+
+
+                CreativeUserListItem(user) {
+                    navController.navigate(Navigation.CustomerProfile(user.userid))
+
+                }
+                /*
+                                AnimatedListItem(
+                                    user = user,
+                                    index = index,
+                                    onClick = {
+                                        navController.navigate(Navigation.CustomerProfile(user.userid))
+                                    }
+                                )*/
             }
 
             // Add some bottom spacing for FAB
@@ -507,22 +514,7 @@ private fun AnimatedListItem(
     index: Int,
     onClick: () -> Unit
 ) {
-    var isVisible by remember { mutableStateOf(false) }
 
-    LaunchedEffect(key1 = user.userid) {
-        delay(index * 100L) // Stagger the animations
-        isVisible = true
-    }
-
-    AnimatedVisibility(
-        visible = isVisible,
-        enter = slideInHorizontally(
-            initialOffsetX = { it },
-            animationSpec = tween(500, easing = FastOutSlowInEasing)
-        ) + fadeIn(animationSpec = tween(500))
-    ) {
-        CreativeUserListItem(user, onClick)
-    }
 }
 
 @OptIn(ExperimentalGlideComposeApi::class)
@@ -577,12 +569,10 @@ private fun CreativeUserListItem(user: User, onClick: () -> Unit) {
                     val isLikelyBase64 = user.img.isNotBlank() && !user.img.startsWith("http", true)
 
                     if (isLikelyBase64) {
-                        val bytes =
-                            runCatching { Base64.decode(user.img, Base64.DEFAULT) }.getOrNull()
-                        val bmp = bytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
-                        if (bmp != null) {
+
+                        if (user.imageBitmap != null) {
                             Image(
-                                bitmap = bmp.asImageBitmap(),
+                                bitmap = user.imageBitmap!!,
                                 contentDescription = "",
                                 modifier = Modifier
                                     .fillMaxSize()

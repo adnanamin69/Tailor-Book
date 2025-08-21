@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -162,11 +163,11 @@ fun AddMeasurementScreen(customerId: String) {
 // Measurement Fields
                 val measurementFields = listOf(
                     MeasurementField(
-                        "Shirt Length",
+                        "Length",
                         shirtLength,
                         Icons.Default.Height
                     ) { shirtLength = it },
-                    MeasurementField("Shirt Arm", shirtArm, Icons.Default.PanTool) {
+                    MeasurementField("Arm", shirtArm, Icons.Default.PanTool) {
                         shirtArm = it
                     },
                     MeasurementField("Shoulder", shoulder, Icons.Default.Accessibility) {
@@ -215,7 +216,8 @@ fun AddMeasurementScreen(customerId: String) {
                     label = "Extra",
                     icon = Icons.Default.Dehaze,
                     gradient = ProfileColors.MeasurementGradients[2]!!,
-                    animationDelay = 8 * 100L
+                    animationDelay = 8 * 100L,
+                    keyboardOptions = KeyboardOptions.Default
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -343,7 +345,8 @@ private fun BeautifulMeasurementTextField(
     label: String,
     icon: ImageVector,
     gradient: List<Color>,
-    animationDelay: Long
+    animationDelay: Long,
+    keyboardOptions: KeyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
 ) {
     var isVisible by remember { mutableStateOf(false) }
 
@@ -408,7 +411,7 @@ private fun BeautifulMeasurementTextField(
                                 fontWeight = FontWeight.Medium
                             )
                         },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        keyboardOptions = keyboardOptions,
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,

@@ -52,7 +52,7 @@ class UsersViewModel : ViewModel() {
                 _isAddingCustomer.value = true
                 _addCustomerError.value = null
                 _addCustomerSuccess.value = false
-
+                Log.i(TAG, "uploadImage: add customor")
                 val name = intent.name.trim()
                 val phone = intent.phone.trim()
                 val address = intent.address.trim()
@@ -91,6 +91,8 @@ class UsersViewModel : ViewModel() {
 
                 docRef.set(userData).await()
                 _addCustomerSuccess.value = true
+                Log.i(TAG, "addddd: add ${_addCustomerSuccess.value}")
+
                 fetchUsers()
                 _isAddingCustomer.value = false
             } catch (e: Exception) {
@@ -103,6 +105,8 @@ class UsersViewModel : ViewModel() {
     fun clearAddCustomerStatus() {
         _addCustomerError.value = null
         _addCustomerSuccess.value = false
+        Log.i(TAG, "clear: add ${_addCustomerSuccess.value}")
+
     }
 
     fun updateCustomer(customerId: String, name: String, phone: String, imageBase64: String?) {
@@ -171,7 +175,12 @@ sealed class UserListState {
 
 sealed class UserListIntent {
     object LoadUsers : UserListIntent()
-    data class UploadImage(val name: String, val phone: String, val address: String, val imageBase64: String?) :
+    data class UploadImage(
+        val name: String,
+        val phone: String,
+        val address: String,
+        val imageBase64: String?
+    ) :
         UserListIntent()
 
     data class SearchUsers(val query: String) : UserListIntent()
