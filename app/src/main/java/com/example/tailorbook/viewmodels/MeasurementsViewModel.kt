@@ -52,7 +52,19 @@ class MeasurementsViewModel : ViewModel() {
                         pant = d.getString("pant") ?: "",
                         panch = d.getString("panch") ?: "",
                         shalwar = d.getString("shalwar") ?: "",
-                        extra = d.getString("extra") ?: ""
+                        extra = d.getString("extra") ?: "",
+
+
+                        // 🆕 Urdu fields (with defaults if missing)
+                        kalar = d.getString("kalar") ?: "کالر",
+                        daman = d.getString("daman") ?: "گول دامن",
+                        bazo = d.getString("bazo") ?: "فٹ بازو",
+                        sidePoket = d.getString("sidePoket") ?: "0",
+                        button = d.getString("button") ?: "سادہ",
+                        cup = d.getString("cup") ?: "چورس",
+                        chamakDaga = d.getString("chamakDaga") ?: "سنگل",
+                        frontPoket = d.getBoolean("frontPoket") ?: false,
+                        shalwarPoket = d.getBoolean("shalwarPoket") ?: false
                     )
                 }
                 _isLoading.value = false
@@ -84,7 +96,18 @@ class MeasurementsViewModel : ViewModel() {
                     "pant" to m.pant,
                     "panch" to m.panch,
                     "shalwar" to m.shalwar,
-                    "extra" to m.extra
+                    "extra" to m.extra,
+
+                    // 🆕 Urdu fields
+                    "kalar" to m.kalar,
+                    "daman" to m.daman,
+                    "bazo" to m.bazo,
+                    "sidePoket" to m.sidePoket,
+                    "button" to m.button,
+                    "cup" to m.cup,
+                    "chamakDaga" to m.chamakDaga,
+                    "frontPoket" to m.frontPoket,
+                    "shalwarPoket" to m.shalwarPoket
                 )
                 FirebaseFirestore.getInstance()
                     .collection("users").document(uid)

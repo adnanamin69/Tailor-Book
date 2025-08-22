@@ -14,8 +14,7 @@ data class Measurement(
     val shalwar: String = "",
     val extra: String,
 
-
-
+    // New options in Urdu
     val kalar: String = "کالر",
     val daman: String = "گول دامن",
     val bazo: String = "فٹ بازو",
@@ -25,5 +24,9 @@ data class Measurement(
     val chamakDaga: String = "سنگل",
     val frontPoket: Boolean = false,
     val shalwarPoket: Boolean = false
+) {
+    fun getYesNo(boolean: Boolean): String {
+        return if (boolean) "ہاں" else "نہیں"
+    }
 
-)
+}

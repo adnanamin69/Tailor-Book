@@ -37,9 +37,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Accessibility
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.Checkroom
 import androidx.compose.material.icons.filled.CropFree
 import androidx.compose.material.icons.filled.Expand
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.FolderShared
 import androidx.compose.material.icons.filled.Height
 import androidx.compose.material.icons.filled.LinearScale
 import androidx.compose.material.icons.filled.Menu
@@ -48,7 +52,11 @@ import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Straighten
+import androidx.compose.material.icons.filled.Style
+import androidx.compose.material.icons.filled.Watch
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.DoneAll
@@ -542,8 +550,21 @@ private fun BeautifulMeasurementDashboard(measurement: Measurement) {
         "چوڑائی" to measurement.lap.toString() to Icons.Default.LinearScale,
         "دامن" to measurement.pant to Icons.Default.Straighten,
         "شلوار" to measurement.shalwar.toString() to Icons.Default.Expand,
-        "پنچہ" to measurement.panch.toString() to Icons.Default.CropFree
-    )
+        "پنچہ" to measurement.panch.toString() to Icons.Default.CropFree,
+
+
+        "کالر" to measurement.kalar.toString() to Icons.Default.Checkroom,
+        "دامن" to measurement.daman.toString() to Icons.Default.Style,
+        "بازو" to measurement.bazo to Icons.Default.FitnessCenter,
+        "سائیڈ جیب" to measurement.sidePoket to Icons.Default.Folder,
+        "بٹن" to measurement.button to Icons.Default.RadioButtonChecked,
+        "کف" to measurement.cup to Icons.Default.Watch,
+        "چمک دھاگہ" to measurement.chamakDaga to Icons.Default.Star,
+        "سامنے کی جیب" to measurement.getYesNo(measurement.frontPoket) to Icons.Default.FolderShared,
+        "شلوار کی جیب" to measurement.getYesNo(measurement.shalwarPoket) to Icons.Default.Work,
+
+
+        )
 
     Card(
         modifier = Modifier
@@ -588,7 +609,10 @@ private fun BeautifulMeasurementDashboard(measurement: Measurement) {
                                 icon = icon,
                                 gradient = ProfileColors.MeasurementGradients[gradientIndex]
                                     ?: ProfileColors.MeasurementGradients[0]!!,
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier
+
+                                    .weight(1f)
+                                    .height(110.dp)
                             )
                         }
                         if (rowItems.size == 1) {
@@ -601,8 +625,8 @@ private fun BeautifulMeasurementDashboard(measurement: Measurement) {
                     label = "Extra",
                     value = measurement.extra,
                     icon = Icons.Default.Menu,
-                    gradient = ProfileColors.MeasurementGradients[0]
-                        ?: ProfileColors.MeasurementGradients[0]!!,
+                    gradient = ProfileColors.MeasurementGradients[1]
+                        ?: ProfileColors.MeasurementGradients[1]!!,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -621,7 +645,6 @@ private fun BeautifulMeasurementCard(
 ) {
     Card(
         modifier = modifier
-            .height(110.dp)
             .shadow(6.dp, RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent)

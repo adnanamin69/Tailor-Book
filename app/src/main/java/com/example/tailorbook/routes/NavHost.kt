@@ -19,6 +19,7 @@ import com.example.tailorbook.screens.OrdersScreen
 import com.example.tailorbook.screens.PaymentsScreen
 import com.example.tailorbook.screens.PhoneNumberScreen
 import com.example.tailorbook.screens.SplashScreen
+import com.example.tailorbook.screens.newscreens.AddMeasurementScreen1
 import com.example.tailorbook.viewmodels.UserListIntent
 import com.example.tailorbook.viewmodels.UserListState
 import kotlinx.coroutines.flow.StateFlow
@@ -109,7 +110,7 @@ object NavHostManager {
             composable<Navigation.AddMeaurement> { backStackEntry ->
                 val args = backStackEntry.toRoute<Navigation.EditCustomer>()
                 // For simplicity, pass empty initial values; real flow would fetch customer by id
-                AddMeasurementScreen(args.customerId)
+                AddMeasurementScreen1(args.customerId)
             }
 
 

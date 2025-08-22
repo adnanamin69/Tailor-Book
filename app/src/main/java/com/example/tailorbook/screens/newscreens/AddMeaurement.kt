@@ -1,4 +1,5 @@
-package com.example.tailorbook.screens
+package com.example.tailorbook.screens.newscreens
+
 
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
@@ -81,6 +82,9 @@ import com.example.tailorbook.components.BeautifulCheckboxGroup
 import com.example.tailorbook.components.BeautifulRadioGroup
 import com.example.tailorbook.models.Measurement
 import com.example.tailorbook.routes.NavHostManager.LocalNavController
+import com.example.tailorbook.screens.BeautifulSaveButton
+import com.example.tailorbook.screens.CustomSnackbar
+import com.example.tailorbook.screens.ProfileColors
 import com.example.tailorbook.viewmodels.MeasurementsViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -92,16 +96,17 @@ private const val TAG = "AddMeaurement"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddMeasurementScreen(customerId: String) {
+fun AddMeasurementScreen1(customerId: String) {
     val viewModel: MeasurementsViewModel = koinViewModel()
     val list by viewModel.measurements.collectAsStateWithLifecycle()
     val saved by viewModel.addSuccess.collectAsStateWithLifecycle(false)
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val navController = LocalNavController.current
-    LaunchedEffect(customerId) { viewModel.fetchMeasurements(customerId) }
-    LaunchedEffect(saved) {
 
+    LaunchedEffect(customerId) { viewModel.fetchMeasurements(customerId) }
+
+    LaunchedEffect(saved) {
         Log.i("AddMeaurement", "AddMeasurementScreen: $saved")
         if (saved) {
             snackbarHostState.showSnackbar("✅ Measurements added successfully!")
@@ -113,6 +118,7 @@ fun AddMeasurementScreen(customerId: String) {
 
     val context = LocalContext.current
 
+    // Measurement state variables
     var shirtLength by remember { mutableStateOf("") }
     var shirtArm by remember { mutableStateOf("") }
     var shoulder by remember { mutableStateOf("") }
@@ -121,12 +127,10 @@ fun AddMeasurementScreen(customerId: String) {
     var lap by remember { mutableStateOf("") }
     var pant by remember { mutableStateOf("") }
     var shalwar by remember { mutableStateOf("") }
-
     var panch by remember { mutableStateOf("") }
     var extra by remember { mutableStateOf("") }
 
-
-    // New Radio/Checkbox states
+    // Radio/Checkbox states
     var kalar by remember { mutableStateOf("کالر") }
     var daman by remember { mutableStateOf("گول دامن") }
     var bazo by remember { mutableStateOf("فٹ بازو") }
@@ -136,9 +140,6 @@ fun AddMeasurementScreen(customerId: String) {
     var chamakDaga by remember { mutableStateOf("سنگل") }
     var frontPoket by remember { mutableStateOf(false) }
     var shalwarPoket by remember { mutableStateOf(false) }
-
-
-
 
     LaunchedEffect(list) {
         list.firstOrNull()?.let { m ->
@@ -152,7 +153,6 @@ fun AddMeasurementScreen(customerId: String) {
             panch = m.panch
             shalwar = m.shalwar
             extra = m.extra
-
             kalar = m.kalar
             daman = m.daman
             bazo = m.bazo
@@ -162,16 +162,19 @@ fun AddMeasurementScreen(customerId: String) {
             chamakDaga = m.chamakDaga
             frontPoket = m.frontPoket
             shalwarPoket = m.shalwarPoket
-
         }
     }
 
     // Background animation
     val infiniteTransition = rememberInfiniteTransition(label = "background")
     val backgroundOffset by infiniteTransition.animateFloat(
-        initialValue = 0f, targetValue = 1f, animationSpec = infiniteRepeatable(
-            animation = tween(30000, easing = LinearEasing), repeatMode = RepeatMode.Reverse
-        ), label = "backgroundOffset"
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(30000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "backgroundOffset"
     )
 
     Box(
@@ -190,21 +193,16 @@ fun AddMeasurementScreen(customerId: String) {
             )
     ) {
         Scaffold(
-            containerColor = Color.Transparent, topBar = {
-                BeautifulMeasurementTopBar(
-                    onBackClick = { navController.navigateUp() })
+            containerColor = Color.Transparent,
+            topBar = {
+                BeautifulMeasurementTopBar(onBackClick = { navController.navigateUp() })
             },
-
             snackbarHost = {
                 SnackbarHost(
                     hostState = snackbarHostState,
-                    snackbar = { data ->
-                        CustomSnackbar(data)
-                    }
+                    snackbar = { data -> CustomSnackbar(data) }
                 )
             }
-
-
         ) { paddingValues ->
             Column(
                 modifier = Modifier
@@ -216,7 +214,14 @@ fun AddMeasurementScreen(customerId: String) {
             ) {
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Define a proper structure
+              /*  // SECTION 1: Basic Measurements (Grid Layout)
+                BeautifulSectionTitle(
+                    title = "Basic Measurements",
+                    subtitle = "Enter the basic measurement values",
+                    animationDelay = 100L
+                )
+*/
+                // Define measurement fields
                 data class MeasurementField(
                     val label: String,
                     val value: String,
@@ -224,16 +229,11 @@ fun AddMeasurementScreen(customerId: String) {
                     val onValueChange: (String) -> Unit
                 )
 
-// Measurement Fields
                 val measurementFields = listOf(
-                    MeasurementField(
-                        "لمبائی",
-                        shirtLength,
-                        Icons.Default.Height
-                    ) { shirtLength = it },
-                    MeasurementField("بازو", shirtArm, Icons.Default.PanTool) {
-                        shirtArm = it
+                    MeasurementField("لمبائی", shirtLength, Icons.Default.Height) {
+                        shirtLength = it
                     },
+                    MeasurementField("بازو", shirtArm, Icons.Default.PanTool) { shirtArm = it },
                     MeasurementField("تیرا", shoulder, Icons.Default.Accessibility) {
                         shoulder = it
                     },
@@ -247,7 +247,7 @@ fun AddMeasurementScreen(customerId: String) {
                     MeasurementField("پنچہ", panch, Icons.Default.CropFree) { panch = it }
                 )
 
-
+                // Grid layout for measurements
                 measurementFields.chunked(2).forEachIndexed { rowIndex, rowItems ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -255,7 +255,7 @@ fun AddMeasurementScreen(customerId: String) {
                     ) {
                         rowItems.forEachIndexed { index, (label, value, icon, onValueChange) ->
                             val gradientIndex =
-                                index + rowIndex % ProfileColors.MeasurementGradients.size
+                                (rowIndex * 2 + index) % ProfileColors.MeasurementGradients.size
                             val gradient = ProfileColors.MeasurementGradients[gradientIndex]
                                 ?: ProfileColors.MeasurementGradients[0]!!
 
@@ -266,61 +266,159 @@ fun AddMeasurementScreen(customerId: String) {
                                 label = label,
                                 icon = icon,
                                 gradient = gradient,
-                                animationDelay = index * 100L
+                                animationDelay = 200L + (rowIndex * 2 + index) * 100L
                             )
                         }
                         if (rowItems.size == 1) {
-                            Spacer(modifier = Modifier.weight(1f))
+                            //  Spacer(modifier = Modifier.weight(1f))
+                            BeautifulRadioGroup(
+                                title = "کالر",
+                                options = listOf("کالر", "ہاف بین"),
+                                selected = kalar,
+                                onSelected = { kalar = it },
+                                animationDelay = 1300L,
+                                modifier = Modifier.weight(1f)
+                            )
+
                         }
                     }
                 }
 
+
+                //  Spacer(modifier = Modifier.height(16.dp))
+
+                /*  // SECTION 2: Style Options
+                  BeautifulSectionTitle(
+                      title = "Style Options",
+                      subtitle = "Choose your preferred style settings",
+                      animationDelay = 1200L
+                  )*/
+
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+
+                    BeautifulRadioGroup(
+                        title = "چمک ڈاگہ",
+                        options = listOf("سنگل", "ڈبل", "ٹرپل"),
+                        selected = chamakDaga,
+                        onSelected = { chamakDaga = it },
+                        animationDelay = 1900L,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    BeautifulRadioGroup(
+                        title = "دامن",
+                        options = listOf("گول دامن", "چورس دامن"),
+                        selected = daman,
+                        onSelected = { daman = it },
+                        animationDelay = 1400L,
+                        modifier = Modifier.weight(1f)
+
+                    )
+                }
+
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    BeautifulRadioGroup(
+                        title = "بازو",
+                        options = listOf("فٹ بازو", "عام بازو", "گول بازو"),
+                        selected = bazo,
+                        onSelected = { bazo = it },
+                        animationDelay = 1500L,
+                        modifier = Modifier.weight(1f)
+                    )
+
+
+                }
+
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    BeautifulRadioGroup(
+                        title = "بٹن",
+                        options = listOf("سادہ", "ڈیزائن"),
+                        selected = button,
+                        onSelected = { button = it },
+                        animationDelay = 1700L,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    BeautifulRadioGroup(
+                        title = "کف",
+                        options = listOf("چورس", "گول"),
+                        selected = cup,
+                        onSelected = { cup = it },
+                        animationDelay = 1800L,
+                        modifier = Modifier.weight(1f)
+                    )
+
+
+                }
+
+
+                /*  Spacer(modifier = Modifier.height(8.dp))
+
+                  // SECTION 3: Additional Features
+                  BeautifulSectionTitle(
+                      title = "Additional Features",
+                      subtitle = "Select additional features and pockets",
+                      animationDelay = 2000L
+                  )*/
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    BeautifulRadioGroup(
+                        title = "سائیڈ پاکٹ",
+                        options = listOf("0", "1", "2"),
+                        selected = sidePoket,
+                        onSelected = { sidePoket = it },
+                        animationDelay = 1600L,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    BeautifulCheckboxGroup(
+                        title = "پاکٹس",
+                        items = mapOf(
+                            "فرنٹ پاکٹ" to frontPoket,
+                            "شلوار پاکٹ" to shalwarPoket
+                        ),
+                        onCheckedChange = { key, checked ->
+                            when (key) {
+                                "فرنٹ پاکٹ" -> frontPoket = checked
+                                "شلوار پاکٹ" -> shalwarPoket = checked
+                            }
+                        },
+                        animationDelay = 2100L,
+                        modifier = Modifier.weight(1f)
+
+                    )
+                }
+
+                // Extra field (full width)
                 BeautifulMeasurementTextField(
                     modifier = Modifier.fillMaxWidth(),
                     value = extra,
-                    onValueChange = {
-                        extra = it
-                    },
+                    onValueChange = { extra = it },
                     label = "Extra",
                     icon = Icons.Default.Dehaze,
                     gradient = ProfileColors.MeasurementGradients[2]!!,
-                    animationDelay = 8 * 100L,
+                    animationDelay = 1100L,
                     keyboardOptions = KeyboardOptions.Default
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
 
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 🆕 Radio Groups
-                BeautifulRadioGroup("کالر", listOf("کالر", "ہاف بین"), kalar) { kalar = it }
-                BeautifulRadioGroup("دامن", listOf("گول دامن", "چورس دامن"), daman) { daman = it }
-                BeautifulRadioGroup(
-                    "بازو",
-                    listOf("فٹ بازو", "عام بازو", "گول بازو"),
-                    bazo
-                ) { bazo = it }
-                BeautifulRadioGroup("سائیڈ پاکٹ", listOf("0", "1", "2"), sidePoket) {
-                    sidePoket = it
-                }
-                BeautifulRadioGroup("بٹن", listOf("سادہ", "ڈیزائن"), button) { button = it }
-                BeautifulRadioGroup("کف", listOf("چورس", "گول"), cup) { cup = it }
-                BeautifulRadioGroup("چمک ڈاگہ", listOf("سنگل", "ڈبل", "ٹرپل"), chamakDaga) {
-                    chamakDaga = it
-                }
-
-                // 🆕 Checkboxes
-                BeautifulCheckboxGroup(
-                    "پاکٹس",
-                    mapOf("فرنٹ پاکٹ" to frontPoket, "شلوار پاکٹ" to shalwarPoket)
-                ) { key, checked ->
-                    when (key) {
-                        "فرنٹ پاکٹ" -> frontPoket = checked
-                        "شلوار پاکٹ" -> shalwarPoket = checked
-                    }
-                }
-
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // Save Button
                 BeautifulSaveButton(
@@ -349,11 +447,51 @@ fun AddMeasurementScreen(customerId: String) {
                                 shalwarPoket = shalwarPoket
                             )
                         )
+                    },
+                )
 
-                    })
-
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(32.dp))
             }
+        }
+    }
+}
+
+@Composable
+private fun BeautifulSectionTitle(
+    title: String,
+    subtitle: String,
+    animationDelay: Long = 0L
+) {
+    var isVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        delay(animationDelay)
+        isVisible = true
+    }
+
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = slideInHorizontally(
+            initialOffsetX = { -it },
+            animationSpec = tween(500, easing = FastOutSlowInEasing)
+        ) + fadeIn(animationSpec = tween(500))
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = title,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF2D3748)
+            )
+            Text(
+                text = subtitle,
+                fontSize = 14.sp,
+                color = Color.White,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }
@@ -374,9 +512,11 @@ private fun BeautifulMeasurementTopBar(onBackClick: () -> Unit) {
                 .background(
                     Brush.horizontalGradient(
                         colors = listOf(
-                            Color.White.copy(alpha = 0.95f), Color.White.copy(alpha = 0.9f)
+                            Color.White.copy(alpha = 0.95f),
+                            Color.White.copy(alpha = 0.9f)
                         )
-                    ), RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
+                    ),
+                    RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
                 )
                 .statusBarsPadding()
                 .padding(horizontal = 20.dp, vertical = 20.dp)
@@ -391,14 +531,17 @@ private fun BeautifulMeasurementTopBar(onBackClick: () -> Unit) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     IconButton(
-                        onClick = onBackClick, modifier = Modifier
+                        onClick = onBackClick,
+                        modifier = Modifier
                             .size(44.dp)
                             .background(
                                 Brush.radialGradient(
                                     colors = listOf(
-                                        Color(0xFF667eea), Color(0xFF764ba2)
+                                        Color(0xFF667eea),
+                                        Color(0xFF764ba2)
                                     )
-                                ), CircleShape
+                                ),
+                                CircleShape
                             )
                     ) {
                         Icon(
@@ -431,10 +574,13 @@ private fun BeautifulMeasurementTopBar(onBackClick: () -> Unit) {
                         .background(
                             Brush.radialGradient(
                                 colors = listOf(
-                                    Color(0xFF4facfe), Color(0xFF00f2fe)
+                                    Color(0xFF4facfe),
+                                    Color(0xFF00f2fe)
                                 )
-                            ), CircleShape
-                        ), contentAlignment = Alignment.Center
+                            ),
+                            CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         Icons.Default.Straighten,
@@ -468,8 +614,10 @@ private fun BeautifulMeasurementTextField(
 
     AnimatedVisibility(
         modifier = modifier,
-        visible = isVisible, enter = slideInHorizontally(
-            initialOffsetX = { it }, animationSpec = tween(500, easing = FastOutSlowInEasing)
+        visible = isVisible,
+        enter = slideInHorizontally(
+            initialOffsetX = { it },
+            animationSpec = tween(500, easing = FastOutSlowInEasing)
         ) + fadeIn(animationSpec = tween(500))
     ) {
         Card(
@@ -485,9 +633,11 @@ private fun BeautifulMeasurementTextField(
                     .background(
                         Brush.linearGradient(
                             colors = listOf(
-                                Color.White.copy(alpha = 0.95f), Color.White.copy(alpha = 0.85f)
+                                Color.White.copy(alpha = 0.95f),
+                                Color.White.copy(alpha = 0.85f)
                             )
-                        ), RoundedCornerShape(20.dp)
+                        ),
+                        RoundedCornerShape(20.dp)
                     )
                     .padding(20.dp)
             ) {
@@ -500,8 +650,10 @@ private fun BeautifulMeasurementTextField(
                         modifier = Modifier
                             .size(50.dp)
                             .background(
-                                Brush.radialGradient(gradient), CircleShape
-                            ), contentAlignment = Alignment.Center
+                                Brush.radialGradient(gradient),
+                                CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = icon,
@@ -532,7 +684,7 @@ private fun BeautifulMeasurementTextField(
                             focusedTextColor = Color(0xFF2D3748),
                             unfocusedTextColor = Color(0xFF2D3748)
                         ),
-                        singleLine = true
+                        singleLine = keyboardOptions != KeyboardOptions.Default
                     )
                 }
             }
@@ -540,120 +692,4 @@ private fun BeautifulMeasurementTextField(
     }
 }
 
-@Composable
- fun BeautifulSaveButton(onClick: () -> Unit) {
-    var isPressed by remember { mutableStateOf(false) }
 
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.95f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "buttonScale"
-    )
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .graphicsLayer(scaleX = scale, scaleY = scale)
-            .shadow(12.dp, RoundedCornerShape(20.dp))
-            .clickable {
-                isPressed = true
-                onClick()
-            },
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            Color(0xFF667eea), Color(0xFF764ba2)
-                        )
-                    ), RoundedCornerShape(20.dp)
-                )
-                .padding(18.dp), contentAlignment = Alignment.Center
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
-                Text(
-                    text = "Save Measurement",
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-    }
-
-    LaunchedEffect(isPressed) {
-        if (isPressed) {
-            delay(150)
-            isPressed = false
-        }
-    }
-}
-
-
-@Composable
-fun RadioGroup(
-    title: String,
-    options: List<String>,
-    selected: String,
-    onSelected: (String) -> Unit
-) {
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
-        Text(title, fontWeight = FontWeight.Bold, color = Color(0xFF2D3748))
-
-        options.forEach { text ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onSelected(text) }
-                    .padding(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                androidx.compose.material3.RadioButton(
-                    selected = (text == selected),
-                    onClick = { onSelected(text) }
-                )
-                Text(text = text, modifier = Modifier.padding(start = 8.dp))
-            }
-        }
-    }
-}
-
-@Composable
-fun CheckBoxGroup(
-    title: String,
-    items: Map<String, Boolean>,
-    onCheckedChange: (String, Boolean) -> Unit
-) {
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
-        Text(title, fontWeight = FontWeight.Bold, color = Color(0xFF2D3748))
-
-        items.forEach { (label, checked) ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onCheckedChange(label, !checked) }
-                    .padding(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                androidx.compose.material3.Checkbox(
-                    checked = checked,
-                    onCheckedChange = { onCheckedChange(label, it) }
-                )
-                Text(text = label, modifier = Modifier.padding(start = 8.dp))
-            }
-        }
-    }
-}
