@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.Accessibility
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CropFree
 import androidx.compose.material.icons.filled.Dehaze
+import androidx.compose.material.icons.filled.Expand
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Height
 import androidx.compose.material.icons.filled.LinearScale
@@ -117,6 +118,8 @@ fun AddMeasurementScreen(customerId: String) {
     var chest by remember { mutableStateOf("") }
     var lap by remember { mutableStateOf("") }
     var pant by remember { mutableStateOf("") }
+    var shalwar by remember { mutableStateOf("") }
+
     var panch by remember { mutableStateOf("") }
     var extra by remember { mutableStateOf("") }
 
@@ -130,6 +133,7 @@ fun AddMeasurementScreen(customerId: String) {
             lap = m.lap
             pant = m.pant
             panch = m.panch
+            shalwar = m.shalwar
             extra = m.extra
         }
     }
@@ -195,23 +199,24 @@ fun AddMeasurementScreen(customerId: String) {
 // Measurement Fields
                 val measurementFields = listOf(
                     MeasurementField(
-                        "Length",
+                        "لمبائی",
                         shirtLength,
                         Icons.Default.Height
                     ) { shirtLength = it },
-                    MeasurementField("Arm", shirtArm, Icons.Default.PanTool) {
+                    MeasurementField("بازو", shirtArm, Icons.Default.PanTool) {
                         shirtArm = it
                     },
-                    MeasurementField("Shoulder", shoulder, Icons.Default.Accessibility) {
+                    MeasurementField("تیرا", shoulder, Icons.Default.Accessibility) {
                         shoulder = it
                     },
-                    MeasurementField("Collar", collar, Icons.Default.RadioButtonChecked) {
+                    MeasurementField("گلہ", collar, Icons.Default.RadioButtonChecked) {
                         collar = it
                     },
-                    MeasurementField("Chest", chest, Icons.Default.Favorite) { chest = it },
-                    MeasurementField("Lap", lap, Icons.Default.LinearScale) { lap = it },
-                    MeasurementField("Pant", pant, Icons.Default.Straighten) { pant = it },
-                    MeasurementField("Pancha", panch, Icons.Default.CropFree) { panch = it }
+                    MeasurementField("چھاتی", chest, Icons.Default.Favorite) { chest = it },
+                    MeasurementField("چوڑائی", lap, Icons.Default.LinearScale) { lap = it },
+                    MeasurementField("دامن", pant, Icons.Default.Straighten) { pant = it },
+                    MeasurementField("شلوار", shalwar, Icons.Default.Expand) { shalwar = it },
+                    MeasurementField("پنچہ", panch, Icons.Default.CropFree) { panch = it }
                 )
 
 
@@ -235,6 +240,9 @@ fun AddMeasurementScreen(customerId: String) {
                                 gradient = gradient,
                                 animationDelay = index * 100L
                             )
+                        }
+                        if (rowItems.size == 1) {
+                            Spacer(modifier = Modifier.weight(1f))
                         }
                     }
                 }
@@ -268,6 +276,7 @@ fun AddMeasurementScreen(customerId: String) {
                                 lap = lap,
                                 pant = pant,
                                 panch = panch,
+                                shalwar = shalwar,
                                 extra = extra
                             )
                         )
@@ -439,6 +448,7 @@ private fun BeautifulMeasurementTextField(
                         label = {
                             Text(
                                 text = label,
+                                fontSize = 14.sp,
                                 color = Color(0xFF667eea).copy(alpha = 0.8f),
                                 fontWeight = FontWeight.Medium
                             )
@@ -447,8 +457,8 @@ private fun BeautifulMeasurementTextField(
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,
-                            focusedIndicatorColor = Color(0xFF667eea),
-                            unfocusedIndicatorColor = Color(0xFF667eea).copy(alpha = 0.3f),
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
                             focusedTextColor = Color(0xFF2D3748),
                             unfocusedTextColor = Color(0xFF2D3748)
                         ),

@@ -11,5 +11,19 @@ data class Measurement(
     val lap: String = "",
     val pant: String = "",
     val panch: String = "",
-    val extra: String
+    val shalwar: String = "",
+    val extra: String,
+
+
+
+    val kalar: String = "کالر",
+    val daman: String = "گول دامن",
+    val bazo: String = "فٹ بازو",
+    val sidePoket: String = "0",
+    val button: String = "سادہ",
+    val cup: String = "چورس",
+    val chamakDaga: String = "سنگل",
+    val frontPoket: Boolean = false,
+    val shalwarPoket: Boolean = false
+
 )

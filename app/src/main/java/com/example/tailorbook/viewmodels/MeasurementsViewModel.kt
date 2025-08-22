@@ -51,6 +51,7 @@ class MeasurementsViewModel : ViewModel() {
                         lap = d.getString("lap") ?: "",
                         pant = d.getString("pant") ?: "",
                         panch = d.getString("panch") ?: "",
+                        shalwar = d.getString("shalwar") ?: "",
                         extra = d.getString("extra") ?: ""
                     )
                 }
@@ -82,6 +83,7 @@ class MeasurementsViewModel : ViewModel() {
                     "lap" to m.lap,
                     "pant" to m.pant,
                     "panch" to m.panch,
+                    "shalwar" to m.shalwar,
                     "extra" to m.extra
                 )
                 FirebaseFirestore.getInstance()

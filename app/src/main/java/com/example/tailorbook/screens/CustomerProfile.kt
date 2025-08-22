@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.Accessibility
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.CropFree
+import androidx.compose.material.icons.filled.Expand
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Height
 import androidx.compose.material.icons.filled.LinearScale
@@ -530,15 +531,18 @@ private fun AnimatedMeasurementCard(measurement: Measurement, index: Int) {
 
 @Composable
 private fun BeautifulMeasurementDashboard(measurement: Measurement) {
+
+
     val measurementItems = listOf(
-        "Length" to measurement.shirt_length.toString() to Icons.Default.Height,
-        "Arm" to measurement.shirt_arm.toString() to Icons.Default.PanTool,
-        "Shoulder" to measurement.shoulder.toString() to Icons.Default.Accessibility,
-        "Collar" to measurement.collar.toString() to Icons.Default.RadioButtonChecked,
-        "Chest" to measurement.chest.toString() to Icons.Default.Favorite,
-        "Lap" to measurement.lap.toString() to Icons.Default.LinearScale,
-        "Pant" to measurement.pant.toString() to Icons.Default.Straighten,
-        "Pancha" to measurement.panch.toString() to Icons.Default.CropFree
+        "لمبائی" to measurement.shirt_length.toString() to Icons.Default.Height,
+        "بازو" to measurement.shirt_arm to Icons.Default.PanTool,
+        "تیرا" to measurement.shoulder.toString() to Icons.Default.Accessibility,
+        "گلہ" to measurement.collar to Icons.Default.RadioButtonChecked,
+        "چھاتی" to measurement.chest.toString() to Icons.Default.Favorite,
+        "چوڑائی" to measurement.lap.toString() to Icons.Default.LinearScale,
+        "دامن" to measurement.pant to Icons.Default.Straighten,
+        "شلوار" to measurement.shalwar.toString() to Icons.Default.Expand,
+        "پنچہ" to measurement.panch.toString() to Icons.Default.CropFree
     )
 
     Card(
@@ -664,10 +668,9 @@ private fun BeautifulMeasurementCard(
 
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyLarge,
                     color = Color.White.copy(alpha = 0.9f),
                     textAlign = TextAlign.Center,
-                    fontSize = 11.sp
                 )
             }
         }
