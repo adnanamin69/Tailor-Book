@@ -29,9 +29,11 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.DoneAll
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,6 +46,7 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -84,7 +87,7 @@ fun OrdersScreen(customerId: String) {
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val customer by usersViewModel.selectedCustomer.collectAsStateWithLifecycle()
 
-    LaunchedEffect(customerId) { 
+    LaunchedEffect(customerId) {
         viewModel.fetchOrders(customerId)
         usersViewModel.fetchCustomerById(customerId)
     }
@@ -123,8 +126,9 @@ fun OrdersScreen(customerId: String) {
                     },
                     onShareClick = { order ->
                         customer?.let { customerData ->
-                            val invoiceText = InvoiceGenerator.generateInvoiceForSharing(customerData, order)
-                            ShareUtils.shareInvoice(context, invoiceText, customerData.phone)
+                            val invoiceText =
+                                InvoiceGenerator.generateInvoiceForSharing(customerData, order)
+                            ShareUtils.shareViaWhatsApp(context, invoiceText, customerData.phone)
                         }
                     },
                     onStatusChange = { status ->
@@ -155,7 +159,7 @@ fun OrderCard(
  */
 
 
-    var expanded by remember { mutableStateOf(false) }
+    var showStatusDialog by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -164,11 +168,26 @@ fun OrderCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
-            // Status Row with Icon + Dropdown
+            // Header Row with Share Button and Status Button
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
+                // Share Button (Upper Right)
+                IconButton(
+                    onClick = { onShareClick(order) },
+                    enabled = customer != null
+                ) {
+                    Icon(
+                        Icons.Default.Share,
+                        contentDescription = "Share Invoice",
+                        tint = if (customer != null) Color(0xFF667eea) else Color.Gray
+                    )
+                }
+
+                Spacer(Modifier.weight(1f))
+
+                // Status Button (Clickable)
                 val (icon, color) = when (order.status) {
                     OrderStatus.PENDING -> Icons.Outlined.Schedule to Color.Gray
                     OrderStatus.IN_PROGRESS -> Icons.Outlined.Build to Color(0xFFFB8C00)
@@ -176,59 +195,82 @@ fun OrderCard(
                     OrderStatus.DELIVERED -> Icons.Outlined.DoneAll to Color(0xFFE53935)
                 }
 
-                Icon(imageVector = icon, contentDescription = order.status.name, tint = color)
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = order.status.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = color
-                )
+                OutlinedButton(
+                    onClick = { showStatusDialog = true },
+                    shape = RoundedCornerShape(20.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = color
+                    )
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = order.status.name,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = order.status.name.replace("_", " "),
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
+            }
 
-                Spacer(Modifier.weight(1f))
+            // Status Change Dialog
+            if (showStatusDialog) {
+                AlertDialog(
+                    onDismissRequest = { showStatusDialog = false },
+                    title = { Text("Change Order Status") },
+                    text = {
+                        Column {
+                            Text("Select new status for this order:")
+                            Spacer(modifier = Modifier.height(16.dp))
+                            OrderStatus.entries.forEach { status ->
+                                val (sIcon, sColor) = when (status) {
+                                    OrderStatus.PENDING -> Icons.Outlined.Schedule to Color.Gray
+                                    OrderStatus.IN_PROGRESS -> Icons.Outlined.Build to Color(
+                                        0xFFFB8C00
+                                    )
 
-                // 3-dot Menu
-                Box {
-                    IconButton(onClick = { expanded = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Change Status")
-                    }
-                    DropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
-                    ) {
-                        OrderStatus.entries.forEach { status ->
-                            DropdownMenuItem(
-                                text = { Text(status.name) },
-                                leadingIcon = {
-                                    val (sIcon, sColor) = when (status) {
-                                        OrderStatus.PENDING -> Icons.Outlined.Schedule to Color.Gray
-                                        OrderStatus.IN_PROGRESS -> Icons.Outlined.Build to Color(
-                                            0xFFFB8C00
-                                        )
+                                    OrderStatus.COMPLETED -> Icons.Outlined.CheckCircle to Color(
+                                        0xFF4CAF50
+                                    )
 
-                                        OrderStatus.COMPLETED -> Icons.Outlined.CheckCircle to Color(
-                                            0xFF4CAF50
-                                        )
+                                    OrderStatus.DELIVERED -> Icons.Outlined.DoneAll to Color(
+                                        0xFFE53935
+                                    )
+                                }
 
-                                        OrderStatus.DELIVERED -> Icons.Outlined.DoneAll to Color(
-                                            0xFFE53935
-                                        )
-                                    }
+                                OutlinedButton(
+                                    onClick = {
+                                        if (status != order.status) {
+                                            onStatusChange(status)
+                                        }
+                                        showStatusDialog = false
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        contentColor = sColor
+                                    )
+                                ) {
                                     Icon(
                                         imageVector = sIcon,
                                         contentDescription = null,
-                                        tint = sColor
+                                        modifier = Modifier.size(18.dp)
                                     )
-                                },
-                                onClick = {
-                                    expanded = false
-                                    if (status != order.status) {
-                                        onStatusChange(status)
-                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(status.name.replace("_", " "))
                                 }
-                            )
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { showStatusDialog = false }) {
+                            Text("Cancel")
                         }
                     }
-                }
+                )
             }
 
             Spacer(Modifier.height(8.dp))
@@ -284,26 +326,10 @@ fun OrderCard(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedButton(onClick = onDetailsClick) { Text("Details") }
-                
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // Share Button
-                    OutlinedButton(
-                        onClick = { onShareClick(order) },
-                        enabled = customer != null
-                    ) {
-                        Icon(
-                            Icons.Default.Share,
-                            contentDescription = "Share Invoice",
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Share")
-                    }
-                    
-                    // Payments Button
-                    if (order.totalDue > order.totalPaid)
-                        Button(onClick = onPaymentsClick) { Text("Payments") }
-                }
+
+                // Payments Button
+                if (order.totalDue > order.totalPaid)
+                    Button(onClick = onPaymentsClick) { Text("Payments") }
             }
         }
     }

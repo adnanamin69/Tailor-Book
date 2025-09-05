@@ -62,6 +62,9 @@ import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.DoneAll
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -72,8 +75,10 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -757,7 +762,7 @@ private fun OrdersContent(customerId: String, callBack: (String) -> Unit) {
                         onShareClick = { orderToShare ->
                             customer?.let { customerData ->
                                 val invoiceText = InvoiceGenerator.generateInvoiceForSharing(customerData, orderToShare)
-                                ShareUtils.shareInvoice(context, invoiceText, customerData.phone)
+                                ShareUtils.shareViaWhatsApp(context, invoiceText, customerData.phone)
                             }
                         },
                         onStatusChange = { newStatus ->
@@ -896,7 +901,7 @@ private fun BeautifulOrderCard(
     onShareClick: (Order) -> Unit,
     onStatusChange: (OrderStatus) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var showStatusDialog by remember { mutableStateOf(false) }
     val statusGradient = ProfileColors.OrderStatusGradients[order.status]
         ?: ProfileColors.OrderStatusGradients[OrderStatus.PENDING]!!
 
@@ -921,105 +926,112 @@ private fun BeautifulOrderCard(
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Header Row with Status and Menu
+                // Header Row with Share Button and Status Button
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Status with gradient background
-                    Box(
+                    // Share Button (Upper Left)
+                    IconButton(
+                        onClick = { onShareClick(order) },
+                        enabled = customer != null,
                         modifier = Modifier
+                            .size(36.dp)
                             .background(
-                                Brush.horizontalGradient(statusGradient),
-                                RoundedCornerShape(20.dp)
+                                Color(0xFF43e97b).copy(alpha = 0.1f),
+                                CircleShape
                             )
-                            .padding(horizontal = 16.dp, vertical = 10.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            val icon = when (order.status) {
-                                OrderStatus.PENDING -> Icons.Outlined.Schedule
-                                OrderStatus.IN_PROGRESS -> Icons.Outlined.Build
-                                OrderStatus.COMPLETED -> Icons.Outlined.CheckCircle
-                                OrderStatus.DELIVERED -> Icons.Outlined.DoneAll
-                            }
-
-                            Icon(
-                                imageVector = icon,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Text(
-                                text = order.status.name.replace("_", " "),
-                                color = Color.White,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        Icon(
+                            Icons.Default.Share,
+                            contentDescription = "Share Invoice",
+                            tint = if (customer != null) Color(0xFF43e97b) else Color.Gray,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
 
-                    // Status Dropdown Menu
-                    Box {
-                        IconButton(
-                            onClick = { expanded = true },
-                            modifier = Modifier
-                                .size(36.dp)
-                                .background(
-                                    Color(0xFF667eea).copy(alpha = 0.1f),
-                                    CircleShape
-                                )
-                        ) {
-                            Icon(
-                                Icons.Default.MoreVert,
-                                contentDescription = "Change Status",
-                                tint = Color(0xFF667eea),
-                                modifier = Modifier.size(20.dp)
-                            )
+                    // Status Button (Clickable)
+                    OutlinedButton(
+                        onClick = { showStatusDialog = true },
+                        shape = RoundedCornerShape(20.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = statusGradient.first(),
+                            containerColor = Color.Transparent
+                        ),
+                        border = ButtonDefaults.outlinedButtonBorder.copy(
+                            brush = Brush.horizontalGradient(statusGradient)
+                        )
+                    ) {
+                        val icon = when (order.status) {
+                            OrderStatus.PENDING -> Icons.Outlined.Schedule
+                            OrderStatus.IN_PROGRESS -> Icons.Outlined.Build
+                            OrderStatus.COMPLETED -> Icons.Outlined.CheckCircle
+                            OrderStatus.DELIVERED -> Icons.Outlined.DoneAll
                         }
 
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
-                        ) {
-                            OrderStatus.entries.forEach { status ->
-                                val (sIcon, sColor) = when (status) {
-                                    OrderStatus.PENDING -> Icons.Outlined.Schedule to Color.Gray
-                                    OrderStatus.IN_PROGRESS -> Icons.Outlined.Build to Color(
-                                        0xFFFB8C00
-                                    )
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.size(6.dp, 0.dp))
+                        Text(
+                            text = order.status.name.replace("_", " "),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
 
-                                    OrderStatus.COMPLETED -> Icons.Outlined.CheckCircle to Color(
-                                        0xFF4CAF50
-                                    )
-
-                                    OrderStatus.DELIVERED -> Icons.Outlined.DoneAll to Color(
-                                        0xFFE53935
-                                    )
-                                }
-
-                                DropdownMenuItem(
-                                    text = { Text(status.name.replace("_", " ")) },
-                                    leadingIcon = {
+                // Status Change Dialog
+                if (showStatusDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showStatusDialog = false },
+                        title = { Text("Change Order Status") },
+                        text = {
+                            Column {
+                                Text("Select new status for this order:")
+                                Spacer(modifier = Modifier.height(16.dp))
+                                OrderStatus.entries.forEach { status ->
+                                    val (sIcon, sColor) = when (status) {
+                                        OrderStatus.PENDING -> Icons.Outlined.Schedule to Color.Gray
+                                        OrderStatus.IN_PROGRESS -> Icons.Outlined.Build to Color(0xFFFB8C00)
+                                        OrderStatus.COMPLETED -> Icons.Outlined.CheckCircle to Color(0xFF4CAF50)
+                                        OrderStatus.DELIVERED -> Icons.Outlined.DoneAll to Color(0xFFE53935)
+                                    }
+                                    
+                                    OutlinedButton(
+                                        onClick = {
+                                            if (status != order.status) {
+                                                onStatusChange(status)
+                                            }
+                                            showStatusDialog = false
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp),
+                                        colors = ButtonDefaults.outlinedButtonColors(
+                                            contentColor = sColor
+                                        )
+                                    ) {
                                         Icon(
                                             imageVector = sIcon,
                                             contentDescription = null,
-                                            tint = sColor
+                                            modifier = Modifier.size(18.dp)
                                         )
-                                    },
-                                    onClick = {
-                                        expanded = false
-                                        if (status != order.status) {
-                                            onStatusChange(status)
-                                        }
+                                        Spacer(modifier = Modifier.size(8.dp, 0.dp))
+                                        Text(status.name.replace("_", " "))
                                     }
-                                )
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { showStatusDialog = false }) {
+                                Text("Cancel")
                             }
                         }
-                    }
+                    )
                 }
 
                 // Dates Section
@@ -1195,7 +1207,7 @@ private fun BeautifulOrderCard(
                 // Action Buttons Row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     // Details Button
                     Card(
@@ -1216,65 +1228,23 @@ private fun BeautifulOrderCard(
                                     ),
                                     RoundedCornerShape(16.dp)
                                 )
-                                .padding(12.dp),
+                                .padding(14.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.Assignment,
                                     contentDescription = null,
                                     tint = Color.White,
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
                                 Text(
                                     text = "Details",
                                     color = Color.White,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
-
-                    // Share Button
-                    Card(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { onShareClick(order) },
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.Transparent
-                        )
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    Brush.horizontalGradient(
-                                        listOf(Color(0xFF43e97b), Color(0xFF38f9d7))
-                                    ),
-                                    RoundedCornerShape(16.dp)
-                                )
-                                .padding(12.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Share,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Text(
-                                    text = "Share",
-                                    color = Color.White,
-                                    fontSize = 12.sp,
+                                    fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -1301,23 +1271,23 @@ private fun BeautifulOrderCard(
                                         ),
                                         RoundedCornerShape(16.dp)
                                     )
-                                    .padding(12.dp),
+                                    .padding(14.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.Favorite,
                                         contentDescription = null,
                                         tint = Color.White,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(18.dp)
                                     )
                                     Text(
                                         text = "Payments",
                                         color = Color.White,
-                                        fontSize = 12.sp,
+                                        fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }

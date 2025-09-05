@@ -6,6 +6,16 @@
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
+
+
+
+    <queries>
+        <!-- Normal WhatsApp -->
+        <package android:name="com.whatsapp" />
+        <!-- WhatsApp Business -->
+        <package android:name="com.whatsapp.w4b" />
+    </queries>
+
     <application
         android:name=".MyApp"
         android:allowBackup="true"
