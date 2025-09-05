@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,6 +39,12 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.simon.xmaterialccp.component.MaterialCountryCodePicker
+import com.simon.xmaterialccp.data.ccpDefaultColors
+import com.simon.xmaterialccp.data.utils.checkPhoneNumber
+import com.simon.xmaterialccp.data.utils.getDefaultLangCode
+import com.simon.xmaterialccp.data.utils.getDefaultPhoneCode
+import com.simon.xmaterialccp.data.utils.getLibCountries
 import com.example.tailorbook.routes.NavHostManager
 import com.example.tailorbook.routes.NavHostManager.LocalNavController
 import com.example.tailorbook.viewmodels.UserListIntent
@@ -89,7 +96,11 @@ fun CustomerFormPage() {
 
     // Form states
     var name by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
+    // Phone picker state
+    var phoneCode by remember { mutableStateOf(getDefaultPhoneCode(context)) }
+    val phoneNumber = rememberSaveable { mutableStateOf("") }
+    var defaultLang by rememberSaveable { mutableStateOf(getDefaultLangCode(context)) }
+    var isValidPhone by remember { mutableStateOf(true) }
     var address by remember { mutableStateOf("") }
     var pickedImageUri by remember { mutableStateOf<Uri?>(null) }
     var imageBase64 by remember { mutableStateOf<String?>(null) }
@@ -97,7 +108,7 @@ fun CustomerFormPage() {
 
     // Validation states
     var nameError by remember { mutableStateOf<String?>(null) }
-    var phoneError by remember { mutableStateOf<String?>(null) }
+    // Phone validation error handled by picker UI (isValidPhone)
 
     // ViewModel states
     val addError by viewModel.addCustomerError.collectAsStateWithLifecycle(null)
@@ -163,7 +174,7 @@ fun CustomerFormPage() {
         if (addSuccess) {
             snackbarHostState.showSnackbar("✅ Customer added successfully!")
             name = ""
-            phone = ""
+            phoneNumber.value = ""
             address = ""
             viewModel.clearAddCustomerStatus()
             scope.launch(Dispatchers.Main) {
@@ -239,22 +250,63 @@ fun CustomerFormPage() {
                     }
                 )
 
-                // Form Fields
+                // Name, Phone and Address Fields
                 AnimatedFormFields(
                     name = name,
                     onNameChange = {
                         name = it
                         nameError = null
                     },
-                    phone = phone,
-                    onPhoneChange = { input ->
-                        phone = input.filter { it.isDigit() || it == '+' || it == ' ' || it == '-' }
-                        phoneError = null
-                    },
                     address = address,
                     onAddressChange = { address = it },
                     nameError = nameError,
-                    phoneError = phoneError
+                    phoneField = {
+                        MaterialCountryCodePicker(
+                            pickedCountry = {
+                                phoneCode = it.countryPhoneCode
+                                defaultLang = it.countryCode
+                            },
+                            defaultCountry = getLibCountries().single { it.countryCode == defaultLang },
+                            error = !isValidPhone,
+                            text = phoneNumber.value,
+                            onValueChange = { phoneNumber.value = it },
+                            searchFieldPlaceHolderTextStyle = MaterialTheme.typography.bodyMedium,
+                            searchFieldTextStyle = MaterialTheme.typography.bodyMedium,
+                            phonenumbertextstyle = MaterialTheme.typography.bodyMedium,
+                            countrytextstyle = MaterialTheme.typography.bodyMedium,
+                            countrycodetextstyle = MaterialTheme.typography.bodyMedium,
+                            showErrorText = true,
+                            showCountryCodeInDIalog = true,
+                            showDropDownAfterFlag = true,
+                            textFieldShapeCornerRadiusInPercentage = 40,
+                            searchFieldShapeCornerRadiusInPercentage = 40,
+                            appbartitleStyle = MaterialTheme.typography.titleLarge,
+                            countryItemBgShape = RoundedCornerShape(5.dp),
+                            showCountryFlag = true,
+                            showCountryCode = true,
+                            isEnabled = !isAdding,
+                            colors = ccpDefaultColors(
+                                primaryColor = MaterialTheme.colorScheme.primary,
+                                errorColor = MaterialTheme.colorScheme.error,
+                                backgroundColor = MaterialTheme.colorScheme.background,
+                                surfaceColor = MaterialTheme.colorScheme.surface,
+                                outlineColor = MaterialTheme.colorScheme.outline,
+                                disabledOutlineColor = MaterialTheme.colorScheme.outline.copy(0.1f),
+                                unfocusedOutlineColor = MaterialTheme.colorScheme.onBackground.copy(
+                                    0.3f
+                                ),
+                                textColor = MaterialTheme.colorScheme.onBackground.copy(0.7f),
+                                cursorColor = MaterialTheme.colorScheme.primary,
+                                topAppBarColor = MaterialTheme.colorScheme.surface,
+                                countryItemBgColor = MaterialTheme.colorScheme.surface,
+                                searchFieldBgColor = MaterialTheme.colorScheme.surface,
+                                dialogNavIconColor = MaterialTheme.colorScheme.onBackground.copy(
+                                    0.7f
+                                ),
+                                dropDownIconTint = MaterialTheme.colorScheme.onBackground.copy(0.7f)
+                            )
+                        )
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -264,11 +316,23 @@ fun CustomerFormPage() {
                     isLoading = isAdding,
                     onClick = {
                         nameError = if (name.isBlank()) "Name is required" else null
-                        phoneError = if (phone.isBlank()) "Phone number is required" else null
 
-                        if (nameError == null && phoneError == null && !isAdding) {
+                        val fullPhoneNumber = phoneCode + phoneNumber.value
+                        val canSubmit = checkPhoneNumber(
+                            phone = phoneNumber.value,
+                            fullPhoneNumber = fullPhoneNumber,
+                            countryCode = defaultLang
+                        )
+                        isValidPhone = canSubmit
+
+                        if (nameError == null && canSubmit && !isAdding) {
                             viewModel.handleIntent(
-                                UserListIntent.UploadImage(name, phone, address, imageBase64)
+                                UserListIntent.UploadImage(
+                                    name,
+                                    fullPhoneNumber,
+                                    address,
+                                    imageBase64
+                                )
                             )
                         }
                     }
@@ -553,12 +617,10 @@ private fun AnimatedActionButton(
 private fun AnimatedFormFields(
     name: String,
     onNameChange: (String) -> Unit,
-    phone: String,
-    onPhoneChange: (String) -> Unit,
     address: String,
     onAddressChange: (String) -> Unit,
     nameError: String?,
-    phoneError: String?
+    phoneField: @Composable () -> Unit
 ) {
     var isVisible by remember { mutableStateOf(false) }
 
@@ -589,7 +651,7 @@ private fun AnimatedFormFields(
                         Brush.linearGradient(FormColors.CardGradient),
                         RoundedCornerShape(24.dp)
                     )
-                    .padding(24.dp)
+                    .padding(18.dp)
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -610,15 +672,8 @@ private fun AnimatedFormFields(
                         placeholder = "Enter customer name"
                     )
 
-                    CustomTextField(
-                        value = phone,
-                        onValueChange = onPhoneChange,
-                        label = "Phone Number",
-                        icon = Icons.Default.Phone,
-                        error = phoneError,
-                        placeholder = "+92 300 1234567",
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
-                    )
+                    // Phone field slot
+                    phoneField()
 
                     CustomTextField(
                         value = address,
