@@ -803,6 +803,14 @@ private fun OrdersContent(customerId: String, callBack: (String) -> Unit) {
                                     )
                                 }
                             }
+
+                            // If delivered with outstanding due, navigate to payments
+                            if (newStatus == OrderStatus.DELIVERED) {
+                                val outstanding = (updatedOrder.totalDue - updatedOrder.totalPaid)
+                                if (outstanding > 0.0) {
+                                    nav.navigate(Navigation.Payments(customerId, updatedOrder.id))
+                                }
+                            }
                         }
                     )
 
