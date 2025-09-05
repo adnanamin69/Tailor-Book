@@ -33,6 +33,10 @@ class UsersViewModel : ViewModel() {
     private val _isAddingCustomer = MutableStateFlow(false)
     val isAddingCustomer = _isAddingCustomer.asStateFlow()
 
+    // Selected customer for sharing
+    private val _selectedCustomer = MutableStateFlow<User?>(null)
+    val selectedCustomer: StateFlow<User?> = _selectedCustomer.asStateFlow()
+
     init {
         handleIntent(UserListIntent.LoadUsers)
         fetchUsers()
@@ -163,6 +167,29 @@ class UsersViewModel : ViewModel() {
         }
 
         _state.value = UserListState.Success(users = filteredList, searchQuery = query)
+    }
+
+    fun fetchCustomerById(customerId: String) {
+        viewModelScope.launch {
+            try {
+                val uid = FirebaseAuth.getInstance().uid ?: return@launch
+                val doc = FirebaseFirestore.getInstance()
+                    .collection("users").document(uid)
+                    .collection("customers").document(customerId)
+                    .get().await()
+                
+                _selectedCustomer.value = if (doc.exists()) {
+                    User(
+                        userid = doc.id,
+                        name = doc.getString("name") ?: "",
+                        phone = doc.getString("phone") ?: "",
+                        img = doc.getString("image") ?: ""
+                    )
+                } else null
+            } catch (e: Exception) {
+                _selectedCustomer.value = null
+            }
+        }
     }
 }
 

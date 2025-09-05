@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -22,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.DoneAll
@@ -62,8 +64,11 @@ import com.example.tailorbook.models.Order
 import com.example.tailorbook.models.OrderStatus
 import com.example.tailorbook.routes.NavHostManager
 import com.example.tailorbook.routes.Navigation
+import com.example.tailorbook.utils.InvoiceGenerator
+import com.example.tailorbook.utils.ShareUtils
 import com.example.tailorbook.viewmodels.OrdersViewModel
 import com.example.tailorbook.viewmodels.PaymentsViewModel
+import com.example.tailorbook.viewmodels.UsersViewModel
 import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -74,12 +79,18 @@ import java.util.Locale
 @Composable
 fun OrdersScreen(customerId: String) {
     val viewModel: OrdersViewModel = koinViewModel()
+    val usersViewModel: UsersViewModel = koinViewModel()
     val orders by viewModel.orders.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val customer by usersViewModel.selectedCustomer.collectAsStateWithLifecycle()
 
-    LaunchedEffect(customerId) { viewModel.fetchOrders(customerId) }
+    LaunchedEffect(customerId) { 
+        viewModel.fetchOrders(customerId)
+        usersViewModel.fetchCustomerById(customerId)
+    }
 
     val nav = NavHostManager.LocalNavController.current
+    val context = LocalContext.current
 
 
     if (isLoading) {
@@ -103,13 +114,21 @@ fun OrdersScreen(customerId: String) {
                 OrderCard(
                     order = o,
                     cId = customerId,
+                    customer = customer,
                     onDetailsClick = {
                         nav.navigate(Navigation.OrderDetails(customerId, o.id))
                     },
                     onPaymentsClick = {
                         nav.navigate(Navigation.Payments(customerId, o.id))
-                    }, {
-                        val updatedOrder = o.copy(status = it)
+                    },
+                    onShareClick = { order ->
+                        customer?.let { customerData ->
+                            val invoiceText = InvoiceGenerator.generateInvoiceForSharing(customerData, order)
+                            ShareUtils.shareInvoice(context, invoiceText, customerData.phone)
+                        }
+                    },
+                    onStatusChange = { status ->
+                        val updatedOrder = o.copy(status = status)
                         viewModel.addOrUpdateOrder(customerId, o.id, updatedOrder)
                     }
                 )
@@ -122,8 +141,10 @@ fun OrdersScreen(customerId: String) {
 fun OrderCard(
     order: Order,
     cId: String,
+    customer: com.example.tailorbook.models.User?,
     onDetailsClick: () -> Unit,
     onPaymentsClick: () -> Unit,
+    onShareClick: (Order) -> Unit,
     onStatusChange: (OrderStatus) -> Unit
 ) {
     /* val viewModel: PaymentsViewModel = koinViewModel()
@@ -263,8 +284,26 @@ fun OrderCard(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedButton(onClick = onDetailsClick) { Text("Details") }
-                if (order.totalDue > order.totalPaid)
-                    Button(onClick = onPaymentsClick) { Text("Payments") }
+                
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Share Button
+                    OutlinedButton(
+                        onClick = { onShareClick(order) },
+                        enabled = customer != null
+                    ) {
+                        Icon(
+                            Icons.Default.Share,
+                            contentDescription = "Share Invoice",
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Share")
+                    }
+                    
+                    // Payments Button
+                    if (order.totalDue > order.totalPaid)
+                        Button(onClick = onPaymentsClick) { Text("Payments") }
+                }
             }
         }
     }

@@ -51,6 +51,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.RadioButtonChecked
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Straighten
@@ -88,6 +89,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -99,8 +101,11 @@ import com.example.tailorbook.models.OrderStatus
 import com.example.tailorbook.routes.NavHostManager
 import com.example.tailorbook.routes.NavHostManager.LocalNavController
 import com.example.tailorbook.routes.Navigation
+import com.example.tailorbook.utils.InvoiceGenerator
+import com.example.tailorbook.utils.ShareUtils
 import com.example.tailorbook.viewmodels.MeasurementsViewModel
 import com.example.tailorbook.viewmodels.OrdersViewModel
+import com.example.tailorbook.viewmodels.UsersViewModel
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 
@@ -703,14 +708,19 @@ private fun BeautifulMeasurementCard(
 @Composable
 private fun OrdersContent(customerId: String, callBack: (String) -> Unit) {
     val viewModel: OrdersViewModel = koinViewModel()
+    val usersViewModel: UsersViewModel = koinViewModel()
     val orders by viewModel.orders.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val customer by usersViewModel.selectedCustomer.collectAsStateWithLifecycle()
     var totalRemaining by remember { mutableStateOf(0.0) }
+    
     LaunchedEffect(customerId) {
         viewModel.fetchOrders(customerId)
+        usersViewModel.fetchCustomerById(customerId)
     }
 
     val nav = LocalNavController.current
+    val context = LocalContext.current
 
     LaunchedEffect(orders) {
         totalRemaining = orders.sumOf { it.totalDue - it.totalPaid }
@@ -737,11 +747,18 @@ private fun OrdersContent(customerId: String, callBack: (String) -> Unit) {
                     //  AnimatedOrderCard(order, customerId, index)
                     BeautifulOrderCard(
                         order = order,
+                        customer = customer,
                         onDetailsClick = {
                             nav.navigate(Navigation.OrderDetails(customerId, order.id))
                         },
                         onPaymentsClick = {
                             nav.navigate(Navigation.Payments(customerId, order.id))
+                        },
+                        onShareClick = { orderToShare ->
+                            customer?.let { customerData ->
+                                val invoiceText = InvoiceGenerator.generateInvoiceForSharing(customerData, orderToShare)
+                                ShareUtils.shareInvoice(context, invoiceText, customerData.phone)
+                            }
                         },
                         onStatusChange = { newStatus ->
                             val updatedOrder = order.copy(status = newStatus)
@@ -873,8 +890,10 @@ private fun AnimatedOrderCard(order: Order, customerId: String, index: Int) {
 @Composable
 private fun BeautifulOrderCard(
     order: Order,
+    customer: com.example.tailorbook.models.User?,
     onDetailsClick: () -> Unit,
     onPaymentsClick: () -> Unit,
+    onShareClick: (Order) -> Unit,
     onStatusChange: (OrderStatus) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -1176,7 +1195,7 @@ private fun BeautifulOrderCard(
                 // Action Buttons Row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // Details Button
                     Card(
@@ -1197,23 +1216,65 @@ private fun BeautifulOrderCard(
                                     ),
                                     RoundedCornerShape(16.dp)
                                 )
-                                .padding(14.dp),
+                                .padding(12.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.Assignment,
                                     contentDescription = null,
                                     tint = Color.White,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
                                 Text(
                                     text = "Details",
                                     color = Color.White,
-                                    fontSize = 14.sp,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+
+                    // Share Button
+                    Card(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onShareClick(order) },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.Transparent
+                        )
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    Brush.horizontalGradient(
+                                        listOf(Color(0xFF43e97b), Color(0xFF38f9d7))
+                                    ),
+                                    RoundedCornerShape(16.dp)
+                                )
+                                .padding(12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Share,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = "Share",
+                                    color = Color.White,
+                                    fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -1240,23 +1301,23 @@ private fun BeautifulOrderCard(
                                         ),
                                         RoundedCornerShape(16.dp)
                                     )
-                                    .padding(14.dp),
+                                    .padding(12.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.Favorite,
                                         contentDescription = null,
                                         tint = Color.White,
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(16.dp)
                                     )
                                     Text(
                                         text = "Payments",
                                         color = Color.White,
-                                        fontSize = 14.sp,
+                                        fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
