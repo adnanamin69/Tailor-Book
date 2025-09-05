@@ -687,11 +687,22 @@ private fun BeautifulMeasurementCard(
                 verticalArrangement = Arrangement.SpaceBetween,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
+                /* Icon(
+                     imageVector = icon,
+                     contentDescription = null,
+                     tint = Color.White,
+                     modifier = Modifier.size(24.dp)
+                 )
+
+
+ */
+
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
                 )
 
                 Text(
@@ -701,12 +712,7 @@ private fun BeautifulMeasurementCard(
                     fontWeight = FontWeight.Bold
                 )
 
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White.copy(alpha = 0.9f),
-                    textAlign = TextAlign.Center,
-                )
+
             }
         }
     }
