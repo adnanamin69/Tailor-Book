@@ -41,6 +41,12 @@ import com.example.tailorbook.routes.NavHostManager.LocalNavController
 import com.example.tailorbook.routes.Navigation
 import com.example.tailorbook.viewmodels.UserListIntent
 import com.example.tailorbook.viewmodels.UserListState
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 
 // Custom color scheme
@@ -376,18 +382,28 @@ private fun SuccessContent(
     if (state.users.isEmpty()) {
         EmptyState()
     } else {
+        val summariesCache = remember { mutableStateMapOf<String, Pair<Double, Long?>>() }
+        val sortedUsers = remember(state.users, summariesCache.toMap()) {
+            state.users.sortedWith(
+                compareBy(
+                    { user -> (summariesCache[user.userid]?.second == null) },
+                    { user -> summariesCache[user.userid]?.second ?: Long.MAX_VALUE }
+                )
+            )
+        }
+
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp)
         ) {
-            items(state.users.size, key = {
-                state.users[it].userid
+            items(sortedUsers.size, key = {
+                sortedUsers[it].userid
             }) { index ->
-                val user = state.users[index]
+                val user = sortedUsers[index]
 
 
-                CreativeUserListItem(user) {
+                CreativeUserListItem(user, summariesCache) {
                     navController.navigate(Navigation.CustomerProfile(user.userid))
 
                 }
@@ -519,13 +535,56 @@ private fun AnimatedListItem(
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-private fun CreativeUserListItem(user: User, onClick: () -> Unit) {
+private fun CreativeUserListItem(
+    user: User,
+    summariesCache: MutableMap<String, Pair<Double, Long?>>, // userid -> (remainingBalance, nearestDelivery)
+    onClick: () -> Unit
+) {
     var isPressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.95f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "scale"
     )
+
+    var remainingBalance by remember { mutableStateOf<Double?>(summariesCache[user.userid]?.first) }
+    var nextDeliveryDate by remember { mutableStateOf<Long?>(summariesCache[user.userid]?.second) }
+
+    LaunchedEffect(user.userid) {
+        if (summariesCache.containsKey(user.userid)) return@LaunchedEffect
+        try {
+            val uid = FirebaseAuth.getInstance().uid ?: return@LaunchedEffect
+            val snapshot = FirebaseFirestore.getInstance()
+                .collection("users").document(uid)
+                .collection("customers").document(user.userid)
+                .collection("orders")
+                .get().await()
+            var total = 0.0
+            var nearest: Long? = null
+            snapshot.documents.forEach { d ->
+                val due = d.getDouble("totalDue") ?: 0.0
+                val paid = d.getDouble("totalPaid") ?: 0.0
+                total += (due - paid).coerceAtLeast(0.0)
+
+                val status = d.getString("status") ?: "PENDING"
+                val delivery = d.getLong("deliveryDate") ?: 0L
+                val isActive = status == "PENDING" || status == "IN_PROGRESS"
+                if (isActive && delivery > 0L) {
+                    val now = System.currentTimeMillis()
+                    if (delivery >= now) {
+                        nearest = if (nearest == null) delivery else minOf(nearest!!, delivery)
+                    }
+                }
+            }
+            summariesCache[user.userid] = total to nearest
+            remainingBalance = total
+            nextDeliveryDate = nearest
+        } catch (_: Exception) {
+            summariesCache.remove(user.userid)
+            remainingBalance = null
+            nextDeliveryDate = null
+        }
+    }
 
     Card(
         modifier = Modifier
@@ -615,14 +674,40 @@ private fun CreativeUserListItem(user: User, onClick: () -> Unit) {
                         color = Color(0xFF4A5568),
                         fontWeight = FontWeight.Medium
                     )
+
+                    // Nearest delivery date for active orders
+                    if (nextDeliveryDate != null) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+                        Text(
+                            text = "Next delivery: ${sdf.format(Date(nextDeliveryDate!!))}",
+                            fontSize = 12.sp,
+                            color = Color(0xFF667eea),
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
 
-                // Arrow indicator
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = Color(0xFF667eea),
-                    modifier = Modifier.size(24.dp)
+
+            }
+
+
+            // Remaining Balance indicator
+            val balance = remainingBalance ?: 0.0
+            val balanceText = if (balance > 0.0) "RS ${"%.0f".format(balance)}" else null
+            val balanceColor = when {
+                remainingBalance == null -> Color(0xFF6B7280)
+                balance > 0.0 -> Color(0xFFEF4444)
+                else -> Color(0xFF10B981)
+            }
+            if (balanceText != null) {
+                Text(
+                    text = balanceText,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    color = balanceColor,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
