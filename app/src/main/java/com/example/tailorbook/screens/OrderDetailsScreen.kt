@@ -37,8 +37,26 @@ fun OrderDetailsScreen(
 ) {
     val vm: OrdersViewModel = koinViewModel()
     val order by vm.selectedOrder.collectAsStateWithLifecycle()
+    val deleteSuccess by vm.deleteSuccess.collectAsStateWithLifecycle()
+    val error by vm.error.collectAsStateWithLifecycle()
     val navController = NavHostManager.LocalNavController.current
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    
     LaunchedEffect(orderId) { vm.fetchOrder(customerId, orderId) }
+    
+    // Handle delete success
+    LaunchedEffect(deleteSuccess) {
+        if (deleteSuccess) {
+            navController.navigateUp()
+        }
+    }
+    
+    // Handle errors
+    LaunchedEffect(error) {
+        error?.let {
+            // You can show a snackbar or toast here
+        }
+    }
 
     // Modern color scheme
     val primaryGradient = Brush.linearGradient(
@@ -139,15 +157,58 @@ fun OrderDetailsScreen(
                         order!!.status.toString()
                     )
 
-                    /*     // Order Actions
-                         OrderActionsCard(
-                             onEditClick = onEditClick,
-                             onPaymentsClick = onPaymentsClick
-                         )
-     */
+                    // Order Actions
+                    OrderActionsCard(
+                        onEditClick = {
+                            navController.navigate(Navigation.OrderForm(customerId, order!!.measurementId, orderId))
+                        },
+                        onDeleteClick = {
+                            showDeleteDialog = true
+                        }
+                    )
                     Spacer(modifier = Modifier.height(20.dp))
                 }
             }
+        }
+        
+        // Delete Confirmation Dialog
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = {
+                    Text(
+                        "Delete Order",
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2D3748)
+                    )
+                },
+                text = {
+                    Text(
+                        "Are you sure you want to delete this order? This action cannot be undone.",
+                        color = Color(0xFF6B7280)
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            vm.deleteOrder(customerId, orderId)
+                            showDeleteDialog = false
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFEF4444)
+                        )
+                    ) {
+                        Text("Delete", color = Color.White)
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showDeleteDialog = false }
+                    ) {
+                        Text("Cancel", color = Color(0xFF6B7280))
+                    }
+                }
+            )
         }
     }
 }
@@ -519,7 +580,7 @@ fun TimelineItem(
 @Composable
 fun OrderActionsCard(
     onEditClick: () -> Unit,
-    onPaymentsClick: () -> Unit
+    onDeleteClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -553,10 +614,10 @@ fun OrderActionsCard(
                     modifier = Modifier.weight(1f)
                 )
                 ActionButton(
-                    title = "Payments",
-                    icon = Icons.Default.Payment,
-                    color = Color(0xFF10B981),
-                    onClick = onPaymentsClick,
+                    title = "Delete Order",
+                    icon = Icons.Default.Delete,
+                    color = Color(0xFFEF4444),
+                    onClick = onDeleteClick,
                     modifier = Modifier.weight(1f)
                 )
             }

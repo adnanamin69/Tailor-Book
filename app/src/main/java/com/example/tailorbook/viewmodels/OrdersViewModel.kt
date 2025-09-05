@@ -28,6 +28,9 @@ class OrdersViewModel : ViewModel() {
     private val _selectedOrder = MutableStateFlow<Order?>(null)
     val selectedOrder: StateFlow<Order?> = _selectedOrder.asStateFlow()
 
+    private val _deleteSuccess = MutableStateFlow(false)
+    val deleteSuccess: StateFlow<Boolean> = _deleteSuccess.asStateFlow()
+
     fun fetchOrders(customerId: String, isLoad: Boolean = true) {
         viewModelScope.launch {
             try {
@@ -125,6 +128,30 @@ class OrdersViewModel : ViewModel() {
                 } else null
             } catch (e: Exception) {
                 _selectedOrder.value = null
+            }
+        }
+    }
+
+    fun deleteOrder(customerId: String, orderId: String) {
+        viewModelScope.launch {
+            try {
+                _deleteSuccess.value = false
+                _error.value = null
+                val uid = FirebaseAuth.getInstance().uid ?: return@launch
+                
+                // Delete the order document
+                FirebaseFirestore.getInstance()
+                    .collection("users").document(uid)
+                    .collection("customers").document(customerId)
+                    .collection("orders").document(orderId)
+                    .delete()
+                    .await()
+                
+                _deleteSuccess.value = true
+                // Clear the selected order since it's been deleted
+                _selectedOrder.value = null
+            } catch (e: Exception) {
+                _error.value = e.localizedMessage
             }
         }
     }

@@ -71,6 +71,7 @@ import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 
 
@@ -83,7 +84,7 @@ fun OrderFormScreen2(
     val pViewModel: PaymentsViewModel = koinViewModel()
 
     val navController = NavHostManager.LocalNavController.current
-    var dress by remember { mutableStateOf("") }
+    var dress by remember { mutableStateOf("shalwar qamees") }
     var due by remember { mutableStateOf("") }
     var paid by remember { mutableStateOf("") }
 
@@ -93,6 +94,32 @@ fun OrderFormScreen2(
 
     var status by remember { mutableStateOf(OrderStatus.PENDING) }
     val context = LocalContext.current
+
+    // Check if we're editing an existing order
+    val isEditing = orderId != null
+    val selectedOrder by viewModel.selectedOrder.collectAsStateWithLifecycle()
+
+    // Fetch existing order data when editing
+    LaunchedEffect(orderId) {
+        if (isEditing && orderId != null) {
+            viewModel.fetchOrder(customerId, orderId)
+        }
+    }
+
+    // Pre-fill form fields when order data is loaded
+    LaunchedEffect(selectedOrder) {
+        selectedOrder?.let { order ->
+            dress = order.dressType
+            due = order.totalDue.toString()
+            paid = order.totalPaid.toString()
+            status = order.status
+            deliveryMillis = order.deliveryDate
+            if (order.deliveryDate > 0) {
+                val sdf = SimpleDateFormat("dd/MM/yy", Locale.getDefault())
+                deliveryText = sdf.format(Date(order.deliveryDate))
+            }
+        }
+    }
 
     val primaryGradient = Brush.linearGradient(
         colors = listOf(
@@ -124,7 +151,9 @@ fun OrderFormScreen2(
         TopAppBar(
             title = {
                 Text(
-                    "New Order", fontWeight = FontWeight.Bold, color = Color.White
+                    if (isEditing) "Edit Order" else "New Order",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
                 )
             },
             navigationIcon = {
@@ -227,9 +256,11 @@ fun OrderFormScreen2(
                             if (it.all { ch -> ch.isDigit() || ch == '.' }) paid = it
                         },
                         label = { Text("Total Paid") },
+                        placeholder = { Text(if (isEditing) "Current paid amount" else "Enter paid amount") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        enabled = !isEditing // Disable editing paid amount when editing existing order
                     )
                 }
             }
@@ -283,7 +314,19 @@ fun OrderFormScreen2(
             Button(
                 enabled = isSaveEnabled,
                 onClick = {
-                    val checkInMillis = System.currentTimeMillis()
+                    // When editing, preserve original check-in date and total paid
+                    val checkInMillis = if (isEditing && selectedOrder != null) {
+                        selectedOrder!!.checkInDate
+                    } else {
+                        System.currentTimeMillis()
+                    }
+
+                    val totalPaidAmount = if (isEditing && selectedOrder != null) {
+                        selectedOrder!!.totalPaid // Keep existing paid amount when editing
+                    } else {
+                        paid.toDoubleOrNull() ?: 0.0 // Use entered amount for new orders
+                    }
+
                     val order = Order(
                         customerId = customerId,
                         measurementId = measurementId ?: "",
@@ -292,19 +335,24 @@ fun OrderFormScreen2(
                         deliveryDate = deliveryMillis ?: 0L,
                         status = status,
                         totalDue = due.toDoubleOrNull() ?: 0.0,
-                        totalPaid = 0.0
+                        // totalPaid = totalPaidAmount
                     )
 
                     val currentTime = System.currentTimeMillis()
 
                     viewModel.addOrUpdateOrder(customerId, orderId ?: currentTime.toString(), order)
-                    if (paid.isNotEmpty()) {
+
+                    // Only add payment if it's a new order or if paid amount is different
+                    if (!isEditing && paid.isNotEmpty()) {
                         pViewModel.addPayment(
                             customerId,
                             orderId ?: currentTime.toString(),
                             paid.toDoubleOrNull() ?: 0.0,
                             System.currentTimeMillis()
                         )
+                    }
+
+                    if (!isEditing) {
                         due = ""
                         paid = ""
                     }
