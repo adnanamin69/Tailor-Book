@@ -57,6 +57,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material.icons.filled.Style
 import androidx.compose.material.icons.filled.Watch
+import androidx.compose.material.icons.filled.Whatsapp
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.CheckCircle
@@ -719,7 +720,7 @@ private fun OrdersContent(customerId: String, callBack: (String) -> Unit) {
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val customer by usersViewModel.selectedCustomer.collectAsStateWithLifecycle()
     var totalRemaining by remember { mutableStateOf(0.0) }
-    
+
     LaunchedEffect(customerId) {
         viewModel.fetchOrders(customerId)
         usersViewModel.fetchCustomerById(customerId)
@@ -760,10 +761,23 @@ private fun OrdersContent(customerId: String, callBack: (String) -> Unit) {
                         onPaymentsClick = {
                             nav.navigate(Navigation.Payments(customerId, order.id))
                         },
-                        onShareClick = { orderToShare ->
+                        onShareClick = { orderToShare, isWhatsapp ->
                             customer?.let { customerData ->
-                                val invoiceText = InvoiceGenerator.generateInvoiceForSharing(customerData, orderToShare)
-                                ShareUtils.shareViaWhatsApp(context, invoiceText, customerData.phone)
+                                val invoiceText = InvoiceGenerator.generateInvoiceForSharing(
+                                    customerData,
+                                    orderToShare
+                                )
+                                if (isWhatsapp)
+                                    ShareUtils.shareViaWhatsApp(
+                                        context,
+                                        invoiceText,
+                                        customerData.phone
+                                    )
+                                else ShareUtils.shareViaSMS(
+                                    context,
+                                    invoiceText,
+                                    customerData.phone
+                                )
                             }
                         },
                         onStatusChange = { newStatus ->
@@ -773,12 +787,20 @@ private fun OrdersContent(customerId: String, callBack: (String) -> Unit) {
                         onStatusChangeWithMessage = { newStatus, orderToUpdate ->
                             val updatedOrder = orderToUpdate.copy(status = newStatus)
                             viewModel.addOrUpdateOrder(customerId, orderToUpdate.id, updatedOrder)
-                            
+
                             // Send completion message if status changed to COMPLETED
                             if (newStatus == OrderStatus.COMPLETED) {
                                 customer?.let { customerData ->
-                                    val completionMessage = CompletionMessageGenerator.generateCompletionMessageForSharing(customerData, orderToUpdate)
-                                    ShareUtils.shareViaWhatsApp(context, completionMessage, customerData.phone)
+                                    val completionMessage =
+                                        CompletionMessageGenerator.generateCompletionMessageForSharing(
+                                            customerData,
+                                            orderToUpdate
+                                        )
+                                    ShareUtils.shareViaWhatsApp(
+                                        context,
+                                        completionMessage,
+                                        customerData.phone
+                                    )
                                 }
                             }
                         }
@@ -911,7 +933,7 @@ private fun BeautifulOrderCard(
     customer: com.example.tailorbook.models.User?,
     onDetailsClick: () -> Unit,
     onPaymentsClick: () -> Unit,
-    onShareClick: (Order) -> Unit,
+    onShareClick: (Order, Boolean) -> Unit,
     onStatusChange: (OrderStatus) -> Unit,
     onStatusChangeWithMessage: (OrderStatus, Order) -> Unit
 ) {
@@ -948,7 +970,27 @@ private fun BeautifulOrderCard(
                 ) {
                     // Share Button (Upper Left)
                     IconButton(
-                        onClick = { onShareClick(order) },
+                        onClick = { onShareClick(order, true) },
+                        enabled = customer != null,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(
+                                Color(0xFF43e97b).copy(alpha = 0.1f),
+                                CircleShape
+                            )
+                    ) {
+                        Icon(
+                            Icons.Default.Whatsapp,
+                            contentDescription = "Share Invoice",
+                            tint = if (customer != null) Color(0xFF43e97b) else Color.Gray,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+
+                    // Share Button (Upper Left)
+                    IconButton(
+                        onClick = { onShareClick(order, false) },
                         enabled = customer != null,
                         modifier = Modifier
                             .size(36.dp)
@@ -960,7 +1002,7 @@ private fun BeautifulOrderCard(
                         Icon(
                             Icons.Default.Share,
                             contentDescription = "Share Invoice",
-                            tint = if (customer != null) Color(0xFF43e97b) else Color.Gray,
+                            tint = if (customer != null) Color(0xff2791f4) else Color.Gray,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -1010,11 +1052,19 @@ private fun BeautifulOrderCard(
                                 OrderStatus.entries.forEach { status ->
                                     val (sIcon, sColor) = when (status) {
                                         OrderStatus.PENDING -> Icons.Outlined.Schedule to Color.Gray
-                                        OrderStatus.IN_PROGRESS -> Icons.Outlined.Build to Color(0xFFFB8C00)
-                                        OrderStatus.COMPLETED -> Icons.Outlined.CheckCircle to Color(0xFF4CAF50)
-                                        OrderStatus.DELIVERED -> Icons.Outlined.DoneAll to Color(0xFFE53935)
+                                        OrderStatus.IN_PROGRESS -> Icons.Outlined.Build to Color(
+                                            0xFFFB8C00
+                                        )
+
+                                        OrderStatus.COMPLETED -> Icons.Outlined.CheckCircle to Color(
+                                            0xFF4CAF50
+                                        )
+
+                                        OrderStatus.DELIVERED -> Icons.Outlined.DoneAll to Color(
+                                            0xFFE53935
+                                        )
                                     }
-                                    
+
                                     OutlinedButton(
                                         onClick = {
                                             if (status != order.status) {
