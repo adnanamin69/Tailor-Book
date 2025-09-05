@@ -67,6 +67,7 @@ import com.example.tailorbook.models.Order
 import com.example.tailorbook.models.OrderStatus
 import com.example.tailorbook.routes.NavHostManager
 import com.example.tailorbook.routes.Navigation
+import com.example.tailorbook.utils.CompletionMessageGenerator
 import com.example.tailorbook.utils.InvoiceGenerator
 import com.example.tailorbook.utils.ShareUtils
 import com.example.tailorbook.viewmodels.OrdersViewModel
@@ -134,6 +135,18 @@ fun OrdersScreen(customerId: String) {
                     onStatusChange = { status ->
                         val updatedOrder = o.copy(status = status)
                         viewModel.addOrUpdateOrder(customerId, o.id, updatedOrder)
+                    },
+                    onStatusChangeWithMessage = { status, order ->
+                        val updatedOrder = order.copy(status = status)
+                        viewModel.addOrUpdateOrder(customerId, order.id, updatedOrder)
+                        
+                        // Send completion message if status changed to COMPLETED
+                        if (status == OrderStatus.COMPLETED) {
+                            customer?.let { customerData ->
+                                val completionMessage = CompletionMessageGenerator.generateCompletionMessageForSharing(customerData, order)
+                                ShareUtils.shareViaWhatsApp(context, completionMessage, customerData.phone)
+                            }
+                        }
                     }
                 )
             }
@@ -149,7 +162,8 @@ fun OrderCard(
     onDetailsClick: () -> Unit,
     onPaymentsClick: () -> Unit,
     onShareClick: (Order) -> Unit,
-    onStatusChange: (OrderStatus) -> Unit
+    onStatusChange: (OrderStatus) -> Unit,
+    onStatusChangeWithMessage: (OrderStatus, Order) -> Unit
 ) {
     /* val viewModel: PaymentsViewModel = koinViewModel()
 
@@ -243,7 +257,7 @@ fun OrderCard(
                                 OutlinedButton(
                                     onClick = {
                                         if (status != order.status) {
-                                            onStatusChange(status)
+                                            onStatusChangeWithMessage(status, order)
                                         }
                                         showStatusDialog = false
                                     },

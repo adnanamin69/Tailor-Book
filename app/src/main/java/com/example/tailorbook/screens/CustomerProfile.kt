@@ -106,6 +106,7 @@ import com.example.tailorbook.models.OrderStatus
 import com.example.tailorbook.routes.NavHostManager
 import com.example.tailorbook.routes.NavHostManager.LocalNavController
 import com.example.tailorbook.routes.Navigation
+import com.example.tailorbook.utils.CompletionMessageGenerator
 import com.example.tailorbook.utils.InvoiceGenerator
 import com.example.tailorbook.utils.ShareUtils
 import com.example.tailorbook.viewmodels.MeasurementsViewModel
@@ -768,6 +769,18 @@ private fun OrdersContent(customerId: String, callBack: (String) -> Unit) {
                         onStatusChange = { newStatus ->
                             val updatedOrder = order.copy(status = newStatus)
                             viewModel.addOrUpdateOrder(customerId, order.id, updatedOrder)
+                        },
+                        onStatusChangeWithMessage = { newStatus, orderToUpdate ->
+                            val updatedOrder = orderToUpdate.copy(status = newStatus)
+                            viewModel.addOrUpdateOrder(customerId, orderToUpdate.id, updatedOrder)
+                            
+                            // Send completion message if status changed to COMPLETED
+                            if (newStatus == OrderStatus.COMPLETED) {
+                                customer?.let { customerData ->
+                                    val completionMessage = CompletionMessageGenerator.generateCompletionMessageForSharing(customerData, orderToUpdate)
+                                    ShareUtils.shareViaWhatsApp(context, completionMessage, customerData.phone)
+                                }
+                            }
                         }
                     )
 
@@ -899,7 +912,8 @@ private fun BeautifulOrderCard(
     onDetailsClick: () -> Unit,
     onPaymentsClick: () -> Unit,
     onShareClick: (Order) -> Unit,
-    onStatusChange: (OrderStatus) -> Unit
+    onStatusChange: (OrderStatus) -> Unit,
+    onStatusChangeWithMessage: (OrderStatus, Order) -> Unit
 ) {
     var showStatusDialog by remember { mutableStateOf(false) }
     val statusGradient = ProfileColors.OrderStatusGradients[order.status]
@@ -1004,7 +1018,7 @@ private fun BeautifulOrderCard(
                                     OutlinedButton(
                                         onClick = {
                                             if (status != order.status) {
-                                                onStatusChange(status)
+                                                onStatusChangeWithMessage(status, order)
                                             }
                                             showStatusDialog = false
                                         },
