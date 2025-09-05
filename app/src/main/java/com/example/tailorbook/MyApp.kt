@@ -8,6 +8,7 @@ import com.example.tailorbook.viewmodels.MeasurementsViewModel
 import com.example.tailorbook.viewmodels.OrdersViewModel
 import com.example.tailorbook.viewmodels.PaymentsViewModel
 import com.example.tailorbook.viewmodels.DashboardViewModel
+import com.example.tailorbook.services.NotificationService
 import com.google.firebase.auth.FirebaseAuth
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -18,12 +19,15 @@ import org.koin.dsl.module
 class MyApp : Application() {
     override fun onCreate() {
         super.onCreate()
+        
+        // Initialize notification channel
+        NotificationService.createNotificationChannel(this)
+        
         startKoin {
             androidLogger()
             androidContext(this@MyApp)
             modules(appModule)
         }
-
     }
 }
 

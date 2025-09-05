@@ -32,6 +32,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.core.content.ContextCompat
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.example.tailorbook.components.LocalProviderWrapper
@@ -39,6 +42,8 @@ import com.example.tailorbook.models.User
 import com.example.tailorbook.routes.NavHostManager
 import com.example.tailorbook.routes.NavHostManager.LocalNavController
 import com.example.tailorbook.routes.Navigation
+import com.example.tailorbook.services.DailyReminderScheduler
+import com.example.tailorbook.services.NotificationService
 import com.example.tailorbook.viewmodels.UserListIntent
 import com.example.tailorbook.viewmodels.UserListState
 import com.google.firebase.auth.FirebaseAuth
@@ -77,6 +82,41 @@ fun HomeScreen() {
 
     val state = NavHostManager.LocalMainViewModelState.current.collectAsState().value
     val handleIntent = NavHostManager.LocalUserSearch.current
+    
+    // Request notification permission for Android 13+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // Schedule daily reminder after permission is granted
+            DailyReminderScheduler.scheduleDailyReminder(context)
+        }
+    }
+    
+    // Request notification permission and schedule daily reminder
+    LaunchedEffect(Unit) {
+        // Create notification channel
+        NotificationService.createNotificationChannel(context)
+        
+        // Check if we need to request notification permission (Android 13+)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            val hasPermission = ContextCompat.checkSelfPermission(
+                context, 
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            
+            if (hasPermission) {
+                // Schedule daily reminder if permission already granted
+                DailyReminderScheduler.scheduleDailyReminder(context)
+            } else {
+                // Request permission
+                notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+        } else {
+            // For Android 12 and below, no permission needed
+            DailyReminderScheduler.scheduleDailyReminder(context)
+        }
+    }
 
     // Animation states
     val infiniteTransition = rememberInfiniteTransition(label = "background")
