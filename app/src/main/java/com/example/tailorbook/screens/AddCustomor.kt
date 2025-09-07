@@ -53,6 +53,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import com.example.tailorbook.routes.NavHostManager.LocalUsersViewModel
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.text.SimpleDateFormat
@@ -91,7 +92,7 @@ object FormColors {
 @Composable
 fun CustomerFormPage() {
     val navController = LocalNavController.current
-    val viewModel: UsersViewModel = koinViewModel()
+    val viewModel: UsersViewModel = LocalUsersViewModel.current
     val context = LocalContext.current
 
     // Form states
@@ -176,7 +177,7 @@ fun CustomerFormPage() {
             name = ""
             phoneNumber.value = ""
             address = ""
-            viewModel.clearAddCustomerStatus()
+            viewModel.handleIntent(UserListIntent.ClearAddCustomerStatus)
             scope.launch(Dispatchers.Main) {
                 navController.navigateUp()
             }
