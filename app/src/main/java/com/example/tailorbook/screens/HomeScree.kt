@@ -688,7 +688,9 @@ private fun CreativeUserListItem(
                         Text(
                             text = "Next delivery: ${sdf.format(Date(user.nearestDelivery))}",
                             fontSize = 12.sp,
-                            color = Color(0xFF667eea),
+                            color = if (user.nearestDelivery < System.currentTimeMillis() + (3600000 * 48)) Color.Red else Color(
+                                0xFF667eea
+                            ),
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -702,7 +704,7 @@ private fun CreativeUserListItem(
             val balance = user.remainingBalance
             val balanceText = if (balance > 0.0) "RS ${"%.0f".format(balance)}" else null
             val balanceColor = when {
-                balance > 0.0 -> Color(0xFFEF4444)
+                balance > 0.0 -> Color(0xff307830)
                 else -> Color(0xFF10B981)
             }
             if (balanceText != null) {

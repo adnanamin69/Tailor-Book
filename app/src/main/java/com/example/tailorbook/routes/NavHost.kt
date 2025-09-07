@@ -20,6 +20,7 @@ import com.example.tailorbook.screens.SplashScreen
 import com.example.tailorbook.screens.newscreens.AddMeasurementScreen1
 import com.example.tailorbook.viewmodels.UserListIntent
 import com.example.tailorbook.viewmodels.UserListState
+import com.example.tailorbook.viewmodels.UsersViewModel
 import kotlinx.coroutines.flow.StateFlow
 
 object NavHostManager {
@@ -38,6 +39,9 @@ object NavHostManager {
 
     val LocalAddCustomerSuccess =
         compositionLocalOf<StateFlow<Boolean>> { error("Add customer success flow not found") }
+
+    val LocalUsersViewModel =
+        compositionLocalOf<UsersViewModel> { error("UsersViewModel not found") }
 
 
     @Composable

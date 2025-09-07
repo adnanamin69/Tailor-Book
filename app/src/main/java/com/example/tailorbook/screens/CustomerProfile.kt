@@ -47,7 +47,6 @@ import androidx.compose.material.icons.filled.FolderShared
 import androidx.compose.material.icons.filled.Height
 import androidx.compose.material.icons.filled.LinearScale
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.RadioButtonChecked
@@ -64,13 +63,10 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.DoneAll
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -115,6 +111,7 @@ import com.example.tailorbook.viewmodels.OrdersViewModel
 import com.example.tailorbook.viewmodels.UsersViewModel
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
+import com.example.tailorbook.routes.NavHostManager.LocalUsersViewModel
 
 // Enhanced color palette
 object ProfileColors {
@@ -683,8 +680,8 @@ private fun BeautifulMeasurementCard(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.SpaceBetween,
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.SpaceAround,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 /* Icon(
@@ -721,7 +718,7 @@ private fun BeautifulMeasurementCard(
 @Composable
 private fun OrdersContent(customerId: String, callBack: (String) -> Unit) {
     val viewModel: OrdersViewModel = koinViewModel()
-    val usersViewModel: UsersViewModel = koinViewModel()
+    val usersViewModel: UsersViewModel = LocalUsersViewModel.current
     val orders by viewModel.orders.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val customer by usersViewModel.selectedCustomer.collectAsStateWithLifecycle()
@@ -916,28 +913,6 @@ private fun EmptyOrders() {
             )
         }
     }
-}
-
-@Composable
-private fun AnimatedOrderCard(order: Order, customerId: String, index: Int) {
-    var isVisible by remember { mutableStateOf(false) }
-
-    /*  LaunchedEffect(key1 = order.id) {
-          delay(index * 150L)
-          isVisible = true
-      }*/
-
-    val nav = NavHostManager.LocalNavController.current
-    val viewModel: OrdersViewModel = koinViewModel()
-
-    /*  AnimatedVisibility(
-          visible = isVisible,
-          enter = slideInHorizontally(
-              initialOffsetX = { -it },
-              animationSpec = tween(600, easing = FastOutSlowInEasing)
-          ) + fadeIn(animationSpec = tween(600))
-      ) {*/
-
 }
 
 

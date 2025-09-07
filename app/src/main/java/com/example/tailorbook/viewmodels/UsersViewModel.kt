@@ -47,6 +47,7 @@ class UsersViewModel : ViewModel() {
             is UserListIntent.LoadUsers -> fetchUsers()
             is UserListIntent.SearchUsers -> filterUsers(intent.query)
             is UserListIntent.UploadImage -> uploadImage(intent)
+            UserListIntent.ClearAddCustomerStatus -> clearAddCustomerStatus()
         }
     }
 
@@ -106,7 +107,7 @@ class UsersViewModel : ViewModel() {
         }
     }
 
-    fun clearAddCustomerStatus() {
+    private fun clearAddCustomerStatus() {
         _addCustomerError.value = null
         _addCustomerSuccess.value = false
         Log.i(TAG, "clear: add ${_addCustomerSuccess.value}")
@@ -245,6 +246,7 @@ sealed class UserListState {
 
 sealed class UserListIntent {
     object LoadUsers : UserListIntent()
+    object ClearAddCustomerStatus : UserListIntent()
     data class UploadImage(
         val name: String,
         val phone: String,

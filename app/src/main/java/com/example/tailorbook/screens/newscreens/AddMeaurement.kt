@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -62,11 +63,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -124,13 +129,13 @@ fun AddMeasurementScreen1(customerId: String) {
     var extra by remember { mutableStateOf("") }
 
     // Radio/Checkbox states
-    var kalar by remember { mutableStateOf("کالر") }
-    var daman by remember { mutableStateOf("گول دامن") }
-    var bazo by remember { mutableStateOf("فٹ بازو") }
-    var sidePoket by remember { mutableStateOf("0") }
-    var button by remember { mutableStateOf("سادہ") }
-    var cup by remember { mutableStateOf("چورس") }
-    var chamakDaga by remember { mutableStateOf("سنگل") }
+    var kalar by remember { mutableStateOf("") }
+    var daman by remember { mutableStateOf("") }
+    var bazo by remember { mutableStateOf("") }
+    var sidePoket by remember { mutableStateOf("") }
+    var button by remember { mutableStateOf("") }
+    var cup by remember { mutableStateOf("") }
+    var chamakDaga by remember { mutableStateOf("") }
     var frontPoket by remember { mutableStateOf(false) }
     var shalwarPoket by remember { mutableStateOf(false) }
 
@@ -556,9 +561,14 @@ private fun BeautifulMeasurementTextField(
     icon: ImageVector,
     gradient: List<Color>,
     animationDelay: Long,
-    keyboardOptions: KeyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default.copy(
+        keyboardType = KeyboardType.Decimal,
+        imeAction = ImeAction.Next // 👈 Show "Next" button
+    ),
+    nextFocusRequester: FocusRequester? = null // 👈 Pass next field focus
 ) {
     var isVisible by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
 
     LaunchedEffect(Unit) {
         delay(animationDelay)
@@ -598,7 +608,6 @@ private fun BeautifulMeasurementTextField(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-
                     Text(
                         text = label,
                         fontSize = 22.sp,
@@ -606,33 +615,16 @@ private fun BeautifulMeasurementTextField(
                         fontWeight = FontWeight.Bold
                     )
 
-
-                    /*  // Icon with gradient background
-                      Box(
-                          modifier = Modifier
-                              .size(50.dp)
-                              .background(
-                                  Brush.radialGradient(gradient),
-                                  CircleShape
-                              ),
-                          contentAlignment = Alignment.Center
-                      ) {
-                          Icon(
-                              imageVector = icon,
-                              contentDescription = null,
-                              tint = Color.White,
-                              modifier = Modifier.size(24.dp)
-                          )
-                      }*/
-
-                    // Text Field
                     TextField(
                         value = value,
                         onValueChange = onValueChange,
-                        /*label = {
-
-                        },*/
                         keyboardOptions = keyboardOptions,
+                        keyboardActions = KeyboardActions(
+                            onNext = {
+                                nextFocusRequester?.requestFocus()
+                                    ?: focusManager.clearFocus() // if last field
+                            }
+                        ),
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,
@@ -641,7 +633,8 @@ private fun BeautifulMeasurementTextField(
                             focusedTextColor = Color(0xFF2D3748),
                             unfocusedTextColor = Color(0xFF2D3748)
                         ),
-                        singleLine = keyboardOptions != KeyboardOptions.Default
+                        singleLine = true,
+                        modifier = Modifier.focusRequester(nextFocusRequester ?: FocusRequester())
                     )
                 }
             }

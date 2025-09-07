@@ -74,6 +74,7 @@ import com.example.tailorbook.viewmodels.OrdersViewModel
 import com.example.tailorbook.viewmodels.PaymentsViewModel
 import com.example.tailorbook.viewmodels.UsersViewModel
 import org.koin.androidx.compose.koinViewModel
+import com.example.tailorbook.routes.NavHostManager.LocalUsersViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -83,7 +84,7 @@ import java.util.Locale
 @Composable
 fun OrdersScreen(customerId: String) {
     val viewModel: OrdersViewModel = koinViewModel()
-    val usersViewModel: UsersViewModel = koinViewModel()
+    val usersViewModel: UsersViewModel = LocalUsersViewModel.current
     val orders by viewModel.orders.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val customer by usersViewModel.selectedCustomer.collectAsStateWithLifecycle()
