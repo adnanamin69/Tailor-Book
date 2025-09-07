@@ -1,7 +1,5 @@
 package com.example.tailorbook.screens
 
-import android.graphics.BitmapFactory
-import android.util.Base64
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
@@ -12,7 +10,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -23,7 +20,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -35,6 +31,8 @@ import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.example.tailorbook.components.LocalProviderWrapper
@@ -46,9 +44,6 @@ import com.example.tailorbook.services.DailyReminderScheduler
 import com.example.tailorbook.services.NotificationService
 import com.example.tailorbook.viewmodels.UserListIntent
 import com.example.tailorbook.viewmodels.UserListState
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -80,9 +75,10 @@ fun HomeScreen() {
     val context = LocalContext.current
     val navController = LocalNavController.current
 
-    val state = NavHostManager.LocalMainViewModelState.current.collectAsState().value
+    val state by NavHostManager.LocalMainViewModelState.current.collectAsState()
     val handleIntent = NavHostManager.LocalUserSearch.current
-    
+
+
     // Request notification permission for Android 13+
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -92,19 +88,19 @@ fun HomeScreen() {
             DailyReminderScheduler.scheduleDailyReminder(context)
         }
     }
-    
+
     // Request notification permission and schedule daily reminder
     LaunchedEffect(Unit) {
         // Create notification channel
         NotificationService.createNotificationChannel(context)
-        
+
         // Check if we need to request notification permission (Android 13+)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             val hasPermission = ContextCompat.checkSelfPermission(
-                context, 
+                context,
                 android.Manifest.permission.POST_NOTIFICATIONS
             ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            
+
             if (hasPermission) {
                 // Schedule daily reminder if permission already granted
                 DailyReminderScheduler.scheduleDailyReminder(context)
@@ -165,8 +161,14 @@ fun HomeScreen() {
             ) {
                 when (state) {
                     is UserListState.Loading -> LoadingScreen()
-                    is UserListState.Success -> SuccessContent(state, navController)
-                    is UserListState.Error -> ErrorScreen(state.message)
+                    is UserListState.Success -> SuccessContent(
+                        state as UserListState.Success,
+                        navController
+                    )
+
+                    is UserListState.Error -> {
+                        ErrorScreen((state as UserListState.Error).message)
+                    }
                 }
             }
         }
@@ -422,28 +424,29 @@ private fun SuccessContent(
     if (state.users.isEmpty()) {
         EmptyState()
     } else {
-        val summariesCache = remember { mutableStateMapOf<String, Pair<Double, Long?>>() }
-        val sortedUsers = remember(state.users, summariesCache.toMap()) {
+        val sortedUsers = remember(state.users) {
             state.users.sortedWith(
                 compareBy(
-                    { user -> (summariesCache[user.userid]?.second == null) },
-                    { user -> summariesCache[user.userid]?.second ?: Long.MAX_VALUE }
+                    { user -> user.nearestDelivery == null },
+                    { user -> user.nearestDelivery ?: Long.MAX_VALUE }
                 )
             )
         }
 
+        val listState = rememberLazyListState()
+
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
+            state = listState,
             verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp)
         ) {
-            items(sortedUsers.size, key = {
-                sortedUsers[it].userid
-            }) { index ->
-                val user = sortedUsers[index]
+            items(sortedUsers, key = { user ->
+                user.userid
+            }) { user ->
 
 
-                CreativeUserListItem(user, summariesCache) {
+                CreativeUserListItem(user) {
                     navController.navigate(Navigation.CustomerProfile(user.userid))
 
                 }
@@ -577,7 +580,6 @@ private fun AnimatedListItem(
 @Composable
 private fun CreativeUserListItem(
     user: User,
-    summariesCache: MutableMap<String, Pair<Double, Long?>>, // userid -> (remainingBalance, nearestDelivery)
     onClick: () -> Unit
 ) {
     var isPressed by remember { mutableStateOf(false) }
@@ -587,44 +589,8 @@ private fun CreativeUserListItem(
         label = "scale"
     )
 
-    var remainingBalance by remember { mutableStateOf<Double?>(summariesCache[user.userid]?.first) }
-    var nextDeliveryDate by remember { mutableStateOf<Long?>(summariesCache[user.userid]?.second) }
 
-    LaunchedEffect(user.userid) {
-        if (summariesCache.containsKey(user.userid)) return@LaunchedEffect
-        try {
-            val uid = FirebaseAuth.getInstance().uid ?: return@LaunchedEffect
-            val snapshot = FirebaseFirestore.getInstance()
-                .collection("users").document(uid)
-                .collection("customers").document(user.userid)
-                .collection("orders")
-                .get().await()
-            var total = 0.0
-            var nearest: Long? = null
-            snapshot.documents.forEach { d ->
-                val due = d.getDouble("totalDue") ?: 0.0
-                val paid = d.getDouble("totalPaid") ?: 0.0
-                total += (due - paid).coerceAtLeast(0.0)
 
-                val status = d.getString("status") ?: "PENDING"
-                val delivery = d.getLong("deliveryDate") ?: 0L
-                val isActive = status == "PENDING" || status == "IN_PROGRESS"
-                if (isActive && delivery > 0L) {
-                    val now = System.currentTimeMillis()
-                    if (delivery >= now) {
-                        nearest = if (nearest == null) delivery else minOf(nearest!!, delivery)
-                    }
-                }
-            }
-            summariesCache[user.userid] = total to nearest
-            remainingBalance = total
-            nextDeliveryDate = nearest
-        } catch (_: Exception) {
-            summariesCache.remove(user.userid)
-            remainingBalance = null
-            nextDeliveryDate = null
-        }
-    }
 
     Card(
         modifier = Modifier
@@ -716,11 +682,11 @@ private fun CreativeUserListItem(
                     )
 
                     // Nearest delivery date for active orders
-                    if (nextDeliveryDate != null) {
+                    if (user.nearestDelivery != null) {
                         Spacer(modifier = Modifier.height(4.dp))
                         val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
                         Text(
-                            text = "Next delivery: ${sdf.format(Date(nextDeliveryDate!!))}",
+                            text = "Next delivery: ${sdf.format(Date(user.nearestDelivery))}",
                             fontSize = 12.sp,
                             color = Color(0xFF667eea),
                             fontWeight = FontWeight.SemiBold
@@ -733,10 +699,9 @@ private fun CreativeUserListItem(
 
 
             // Remaining Balance indicator
-            val balance = remainingBalance ?: 0.0
+            val balance = user.remainingBalance
             val balanceText = if (balance > 0.0) "RS ${"%.0f".format(balance)}" else null
             val balanceColor = when {
-                remainingBalance == null -> Color(0xFF6B7280)
                 balance > 0.0 -> Color(0xFFEF4444)
                 else -> Color(0xFF10B981)
             }

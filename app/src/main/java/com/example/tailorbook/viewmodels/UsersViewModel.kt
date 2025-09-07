@@ -95,9 +95,9 @@ class UsersViewModel : ViewModel() {
 
                 docRef.set(userData).await()
                 _addCustomerSuccess.value = true
+                fetchUsers()
                 Log.i(TAG, "addddd: add ${_addCustomerSuccess.value}")
 
-                fetchUsers()
                 _isAddingCustomer.value = false
             } catch (e: Exception) {
                 _addCustomerError.value = e.localizedMessage ?: "Unexpected error"
@@ -138,24 +138,67 @@ class UsersViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 _state.value = UserListState.Loading
-                val snapshot = FirebaseFirestore.getInstance().collection("users").document(
-                    FirebaseAuth.getInstance().uid.toString()
-                ).collection("customers").get().await()
+
+                val uid = FirebaseAuth.getInstance().uid ?: return@launch
+                val snapshot = FirebaseFirestore.getInstance()
+                    .collection("users").document(uid)
+                    .collection("customers")
+                    .get()
+                    .await()
+
                 val userList = snapshot.documents.map { doc ->
+                    val userid = doc.id
+                    val name = doc.getString("name") ?: ""
+                    val phone = doc.getString("phone") ?: ""
+                    val img = doc.getString("image") ?: ""
+
+                    // Fetch orders for this user
+                    val ordersSnapshot = FirebaseFirestore.getInstance()
+                        .collection("users").document(uid)
+                        .collection("customers").document(userid)
+                        .collection("orders")
+                        .get()
+                        .await()
+
+                    var total = 0.0
+                    var nearest: Long? = null
+
+                    ordersSnapshot.documents.forEach { d ->
+                        val due = d.getDouble("totalDue") ?: 0.0
+                        val paid = d.getDouble("totalPaid") ?: 0.0
+                        total += (due - paid).coerceAtLeast(0.0)
+
+                        val status = d.getString("status") ?: "PENDING"
+                        val delivery = d.getLong("deliveryDate") ?: 0L
+                        val isActive = status == "PENDING" || status == "IN_PROGRESS"
+                        if (isActive && delivery > 0L) {
+                            val now = System.currentTimeMillis()
+                            if (delivery >= now) {
+                                nearest =
+                                    if (nearest == null) delivery else minOf(nearest!!, delivery)
+                            }
+                        }
+                    }
+
                     User(
-                        userid = doc.id,
-                        name = doc.getString("name") ?: "",
-                        phone = doc.getString("phone") ?: "",
-                        img = doc.getString("image") ?: ""
+                        userid = userid,
+                        name = name,
+                        phone = phone,
+                        img = img,
+                        remainingBalance = total,
+                        nearestDelivery = nearest
                     )
                 }
+
                 _allUsers.value = userList
                 _state.value = UserListState.Success(users = userList, searchQuery = "")
+
             } catch (e: Exception) {
                 _state.value = UserListState.Error(e.localizedMessage ?: "Unknown error")
             }
         }
     }
+
 
     private fun filterUsers(query: String) {
         val filteredList = if (query.isBlank()) _allUsers.value
@@ -177,7 +220,7 @@ class UsersViewModel : ViewModel() {
                     .collection("users").document(uid)
                     .collection("customers").document(customerId)
                     .get().await()
-                
+
                 _selectedCustomer.value = if (doc.exists()) {
                     User(
                         userid = doc.id,

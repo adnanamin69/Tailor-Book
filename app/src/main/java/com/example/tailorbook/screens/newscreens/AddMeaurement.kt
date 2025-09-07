@@ -207,13 +207,13 @@ fun AddMeasurementScreen1(customerId: String) {
             ) {
                 Spacer(modifier = Modifier.height(8.dp))
 
-              /*  // SECTION 1: Basic Measurements (Grid Layout)
-                BeautifulSectionTitle(
-                    title = "Basic Measurements",
-                    subtitle = "Enter the basic measurement values",
-                    animationDelay = 100L
-                )
-*/
+                /*  // SECTION 1: Basic Measurements (Grid Layout)
+                  BeautifulSectionTitle(
+                      title = "Basic Measurements",
+                      subtitle = "Enter the basic measurement values",
+                      animationDelay = 100L
+                  )
+  */
                 // Define measurement fields
                 data class MeasurementField(
                     val label: String,
@@ -598,36 +598,40 @@ private fun BeautifulMeasurementTextField(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Icon with gradient background
-                    Box(
-                        modifier = Modifier
-                            .size(50.dp)
-                            .background(
-                                Brush.radialGradient(gradient),
-                                CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+
+                    Text(
+                        text = label,
+                        fontSize = 22.sp,
+                        color = Color(0xFF667eea).copy(alpha = 0.8f),
+                        fontWeight = FontWeight.Bold
+                    )
+
+
+                    /*  // Icon with gradient background
+                      Box(
+                          modifier = Modifier
+                              .size(50.dp)
+                              .background(
+                                  Brush.radialGradient(gradient),
+                                  CircleShape
+                              ),
+                          contentAlignment = Alignment.Center
+                      ) {
+                          Icon(
+                              imageVector = icon,
+                              contentDescription = null,
+                              tint = Color.White,
+                              modifier = Modifier.size(24.dp)
+                          )
+                      }*/
 
                     // Text Field
                     TextField(
                         value = value,
                         onValueChange = onValueChange,
-                        label = {
-                            Text(
-                                text = label,
-                                fontSize = 14.sp,
-                                color = Color(0xFF667eea).copy(alpha = 0.8f),
-                                fontWeight = FontWeight.Medium
-                            )
-                        },
+                        /*label = {
+
+                        },*/
                         keyboardOptions = keyboardOptions,
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
