@@ -2,44 +2,30 @@ package com.example.tailorbook.screens.newscreens
 
 
 import android.util.Log
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Accessibility
-import androidx.compose.material.icons.filled.CropFree
-import androidx.compose.material.icons.filled.Dehaze
-import androidx.compose.material.icons.filled.Expand
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Height
-import androidx.compose.material.icons.filled.LinearScale
-import androidx.compose.material.icons.filled.PanTool
-import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material.icons.outlined.ArrowBackIosNew
 import androidx.compose.material3.Card
@@ -63,34 +49,37 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.tailorbook.components.BeautifulCheckboxGroup
-import com.example.tailorbook.components.BeautifulRadioGroup
 import com.example.tailorbook.models.Measurement
 import com.example.tailorbook.routes.NavHostManager.LocalNavController
-import com.example.tailorbook.screens.BeautifulSaveButton
 import com.example.tailorbook.screens.CustomSnackbar
 import com.example.tailorbook.screens.ProfileColors
 import com.example.tailorbook.viewmodels.MeasurementsViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import kotlin.collections.chunked
 
 private const val TAG = "AddMeaurement"
+
+data class StyleField(
+    val label: String,
+    val value: String,
+    val options: List<String>,
+    val onSelected: (String) -> Unit
+)
+
+data class BasicField(
+    val label: String,
+    val value: String,
+    val onValueChange: (String) -> Unit
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -206,223 +195,132 @@ fun AddMeasurementScreen1(customerId: String) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(horizontal = 20.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(horizontal = 16.dp)
+                    .padding(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Spacer(modifier = Modifier.height(8.dp))
-
-                /*  // SECTION 1: Basic Measurements (Grid Layout)
-                  BeautifulSectionTitle(
-                      title = "Basic Measurements",
-                      subtitle = "Enter the basic measurement values",
-                      animationDelay = 100L
-                  )
-  */
-                // Define measurement fields
-                data class MeasurementField(
-                    val label: String,
-                    val value: String,
-                    val icon: ImageVector,
-                    val onValueChange: (String) -> Unit
+                // Basic measurements in 3-column grid
+                val basicFields = listOf(
+                    BasicField("لمبائی", shirtLength) { shirtLength = it },
+                    BasicField("بازو", shirtArm) { shirtArm = it },
+                    BasicField("تیرا", shoulder) { shoulder = it },
+                    BasicField("گلہ", collar) { collar = it },
+                    BasicField("چھاتی", chest) { chest = it },
+                    BasicField("چوڑائی", lap) { lap = it },
+                    BasicField("دامن", pant) { pant = it },
+                    BasicField("شلوار", shalwar) { shalwar = it },
+                    BasicField("پنچہ", panch) { panch = it }
                 )
 
-                val measurementFields = listOf(
-                    MeasurementField("لمبائی", shirtLength, Icons.Default.Height) {
-                        shirtLength = it
-                    },
-                    MeasurementField("بازو", shirtArm, Icons.Default.PanTool) { shirtArm = it },
-                    MeasurementField("تیرا", shoulder, Icons.Default.Accessibility) {
-                        shoulder = it
-                    },
-                    MeasurementField("گلہ", collar, Icons.Default.RadioButtonChecked) {
-                        collar = it
-                    },
-                    MeasurementField("چھاتی", chest, Icons.Default.Favorite) { chest = it },
-                    MeasurementField("چوڑائی", lap, Icons.Default.LinearScale) { lap = it },
-                    MeasurementField("دامن", pant, Icons.Default.Straighten) { pant = it },
-                    MeasurementField("شلوار", shalwar, Icons.Default.Expand) { shalwar = it },
-                    MeasurementField("پنچہ", panch, Icons.Default.CropFree) { panch = it }
-                )
-
-                // Grid layout for measurements
-                measurementFields.chunked(2).forEachIndexed { rowIndex, rowItems ->
+                basicFields.chunked(3).forEach { rowItems ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        rowItems.forEachIndexed { index, (label, value, icon, onValueChange) ->
-                            val gradientIndex =
-                                (rowIndex * 2 + index) % ProfileColors.MeasurementGradients.size
-                            val gradient = ProfileColors.MeasurementGradients[gradientIndex]
-                                ?: ProfileColors.MeasurementGradients[0]!!
-
-                            BeautifulMeasurementTextField(
-                                modifier = Modifier.weight(1f),
+                        rowItems.forEach { (label, value, onValueChange) ->
+                            SimpleTextField(
+                                label = label,
                                 value = value,
                                 onValueChange = onValueChange,
-                                label = label,
-                                icon = icon,
-                                gradient = gradient,
-                                animationDelay = 200L + (rowIndex * 2 + index) * 100L
-                            )
-                        }
-                        if (rowItems.size == 1) {
-                            //  Spacer(modifier = Modifier.weight(1f))
-                            BeautifulRadioGroup(
-                                title = "کالر",
-                                options = listOf("کالر", "ہاف بین"),
-                                selected = kalar,
-                                onSelected = { kalar = it },
-                                animationDelay = 1300L,
                                 modifier = Modifier.weight(1f)
                             )
-
+                        }
+                        repeat(3 - rowItems.size) {
+                            Spacer(modifier = Modifier.weight(1f))
                         }
                     }
                 }
 
+                // Style options in 3-column grid
+                val styleFields = listOf(
+                    StyleField("کالر", kalar, listOf("کالر", "ہاف بین")) { kalar = it },
+                    StyleField("چمک ڈاگہ", chamakDaga, listOf("سنگل", "ڈبل", "ٹرپل")) {
+                        chamakDaga = it
+                    },
+                    StyleField("دامن", daman, listOf("گول دامن", "چورس دامن")) { daman = it },
+                    StyleField("بازو", bazo, listOf("فٹ بازو", "عام بازو", "گول بازو")) {
+                        bazo = it
+                    },
+                    StyleField("بٹن", button, listOf("سادہ", "ڈیزائن")) { button = it },
+                    StyleField("کف", cup, listOf("چورس", "گول")) { cup = it },
+                )
 
-                //  Spacer(modifier = Modifier.height(16.dp))
-
-                /*  // SECTION 2: Style Options
-                  BeautifulSectionTitle(
-                      title = "Style Options",
-                      subtitle = "Choose your preferred style settings",
-                      animationDelay = 1200L
-                  )*/
-
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-
-                    BeautifulRadioGroup(
-                        title = "چمک ڈاگہ",
-                        options = listOf("سنگل", "ڈبل", "ٹرپل"),
-                        selected = chamakDaga,
-                        onSelected = { chamakDaga = it },
-                        animationDelay = 1900L,
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    BeautifulRadioGroup(
-                        title = "دامن",
-                        options = listOf("گول دامن", "چورس دامن"),
-                        selected = daman,
-                        onSelected = { daman = it },
-                        animationDelay = 1400L,
-                        modifier = Modifier.weight(1f)
-
-                    )
+                styleFields.chunked(3).forEach { rowItems ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        rowItems.forEach { (label, value, options, onSelected) ->
+                            SimpleRadioGroup(
+                                title = label,
+                                options = options,
+                                selected = value,
+                                onSelected = onSelected,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        repeat(3 - rowItems.size) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
                 }
 
-
+                // Checkboxes in 2-column grid
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(
+                            IntrinsicSize.Min
+                        ),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    BeautifulRadioGroup(
-                        title = "بازو",
-                        options = listOf("فٹ بازو", "عام بازو", "گول بازو"),
-                        selected = bazo,
-                        onSelected = { bazo = it },
-                        animationDelay = 1500L,
-                        modifier = Modifier.weight(1f)
-                    )
+                    StyleField("سائیڈ پاکٹ", sidePoket, listOf("0", "1", "2")) { sidePoket = it }
 
-
-                }
-
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    BeautifulRadioGroup(
-                        title = "بٹن",
-                        options = listOf("سادہ", "ڈیزائن"),
-                        selected = button,
-                        onSelected = { button = it },
-                        animationDelay = 1700L,
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    BeautifulRadioGroup(
-                        title = "کف",
-                        options = listOf("چورس", "گول"),
-                        selected = cup,
-                        onSelected = { cup = it },
-                        animationDelay = 1800L,
-                        modifier = Modifier.weight(1f)
-                    )
-
-
-                }
-
-
-                /*  Spacer(modifier = Modifier.height(8.dp))
-
-                  // SECTION 3: Additional Features
-                  BeautifulSectionTitle(
-                      title = "Additional Features",
-                      subtitle = "Select additional features and pockets",
-                      animationDelay = 2000L
-                  )*/
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    BeautifulRadioGroup(
+                    SimpleRadioGroup(
                         title = "سائیڈ پاکٹ",
                         options = listOf("0", "1", "2"),
                         selected = sidePoket,
                         onSelected = { sidePoket = it },
-                        animationDelay = 1600L,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
                     )
 
-                    BeautifulCheckboxGroup(
-                        title = "پاکٹس",
-                        items = mapOf(
-                            "فرنٹ پاکٹ" to frontPoket,
-                            "شلوار پاکٹ" to shalwarPoket
-                        ),
-                        onCheckedChange = { key, checked ->
-                            when (key) {
-                                "فرنٹ پاکٹ" -> frontPoket = checked
-                                "شلوار پاکٹ" -> shalwarPoket = checked
-                            }
-                        },
-                        animationDelay = 2100L,
-                        modifier = Modifier.weight(1f)
 
+                    SimpleCheckbox(
+                        title = "فرنٹ پاکٹ",
+                        checked = frontPoket,
+                        onCheckedChange = { frontPoket = it },
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                    )
+                    SimpleCheckbox(
+                        title = "شلوار پاکٹ",
+                        checked = shalwarPoket,
+                        onCheckedChange = { shalwarPoket = it },
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
                     )
                 }
 
-                // Extra field (full width)
-                BeautifulMeasurementTextField(
-                    modifier = Modifier.fillMaxWidth(),
+                // Extra field
+                SimpleTextField(
+                    label = "Extra",
                     value = extra,
                     onValueChange = { extra = it },
-                    label = "Extra",
-                    icon = Icons.Default.Dehaze,
-                    gradient = ProfileColors.MeasurementGradients[2]!!,
-                    animationDelay = 1100L,
-                    keyboardOptions = KeyboardOptions.Default
+                    modifier = Modifier.fillMaxWidth()
                 )
 
-
-
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // Save Button
-                BeautifulSaveButton(
+                SimpleSaveButton(
                     onClick = {
                         viewModel.addMeasurement(
                             customerId, Measurement(
+                                id = "", // Will be generated by Firestore
                                 customerId = customerId,
                                 shirt_length = shirtLength,
                                 shirt_arm = shirtArm,
@@ -445,10 +343,8 @@ fun AddMeasurementScreen1(customerId: String) {
                                 shalwarPoket = shalwarPoket
                             )
                         )
-                    },
+                    }
                 )
-
-                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }
@@ -553,91 +449,192 @@ private fun BeautifulMeasurementTopBar(onBackClick: () -> Unit) {
 }
 
 @Composable
-private fun BeautifulMeasurementTextField(
+private fun SimpleTextField(
     modifier: Modifier = Modifier,
-    value: String,
-    onValueChange: (String) -> Unit,
     label: String,
-    icon: ImageVector,
-    gradient: List<Color>,
-    animationDelay: Long,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default.copy(
-        keyboardType = KeyboardType.Decimal,
-        imeAction = ImeAction.Next // 👈 Show "Next" button
-    ),
-    nextFocusRequester: FocusRequester? = null // 👈 Pass next field focus
+    value: String,
+    onValueChange: (String) -> Unit
 ) {
-    var isVisible by remember { mutableStateOf(false) }
-    val focusManager = LocalFocusManager.current
-
-    LaunchedEffect(Unit) {
-        delay(animationDelay)
-        isVisible = true
-    }
-
-    AnimatedVisibility(
-        modifier = modifier,
-        visible = isVisible,
-        enter = slideInHorizontally(
-            initialOffsetX = { it },
-            animationSpec = tween(500, easing = FastOutSlowInEasing)
-        ) + fadeIn(animationSpec = tween(500))
+    Card(
+        modifier = modifier
+            .height(70.dp)
+            .shadow(2.dp, RoundedCornerShape(8.dp)),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.9f)
+        )
     ) {
-        Card(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .shadow(6.dp, RoundedCornerShape(20.dp)),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+                .fillMaxSize()
+                .padding(8.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = label,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF667eea),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            TextField(
+                value = value,
+                onValueChange = onValueChange,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color(0xFF667eea),
+                    unfocusedIndicatorColor = Color.Gray.copy(alpha = 0.5f),
+                    focusedTextColor = Color(0xFF2D3748),
+                    unfocusedTextColor = Color(0xFF2D3748)
+                ),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+@Composable
+private fun SimpleRadioGroup(
+    modifier: Modifier = Modifier,
+    title: String,
+    options: List<String>,
+    selected: String,
+    onSelected: (String) -> Unit
+) {
+    Card(
+        modifier = modifier
+            .height(70.dp)
+            .shadow(2.dp, RoundedCornerShape(8.dp)),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.9f)
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(6.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = title,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF667eea),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                options.forEach { option ->
+                    val isSelected = selected == option
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                if (isSelected) Color(0xFF667eea) else Color.Gray.copy(alpha = 0.3f),
+                                RoundedCornerShape(4.dp)
+                            )
+                            .clickable { onSelected(option) }
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = option,
+                            fontSize = 8.sp,
+                            color = if (isSelected) Color.White else Color(0xFF2D3748),
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SimpleCheckbox(
+    modifier: Modifier = Modifier,
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Card(
+        modifier = modifier
+            .fillMaxHeight()
+            .clickable {
+                onCheckedChange(!checked)
+            }
+            .shadow(2.dp, RoundedCornerShape(8.dp)),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.9f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .size(16.dp)
                     .background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.95f),
-                                Color.White.copy(alpha = 0.85f)
-                            )
-                        ),
-                        RoundedCornerShape(20.dp)
+                        if (checked) Color(0xFF667eea) else Color.Gray.copy(alpha = 0.3f),
+                        RoundedCornerShape(3.dp)
                     )
-                    .padding(20.dp)
+                    .clickable { onCheckedChange(!checked) },
+                contentAlignment = Alignment.Center
             ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+                if (checked) {
                     Text(
-                        text = label,
-                        fontSize = 22.sp,
-                        color = Color(0xFF667eea).copy(alpha = 0.8f),
+                        text = "✓",
+                        color = Color.White,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
-                    )
-
-                    TextField(
-                        value = value,
-                        onValueChange = onValueChange,
-                        keyboardOptions = keyboardOptions,
-                        keyboardActions = KeyboardActions(
-                            onNext = {
-                                nextFocusRequester?.requestFocus()
-                                    ?: focusManager.clearFocus() // if last field
-                            }
-                        ),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedTextColor = Color(0xFF2D3748),
-                            unfocusedTextColor = Color(0xFF2D3748)
-                        ),
-                        singleLine = true,
-                        modifier = Modifier.focusRequester(nextFocusRequester ?: FocusRequester())
                     )
                 }
             }
+            Text(
+                text = title,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF2D3748)
+            )
+        }
+    }
+}
+
+@Composable
+private fun SimpleSaveButton(onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .shadow(4.dp, RoundedCornerShape(12.dp))
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF667eea)
+        )
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Save Measurements",
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

@@ -421,6 +421,9 @@ private fun SuccessContent(
     state: UserListState.Success,
     navController: androidx.navigation.NavController
 ) {
+
+    val handleIntent = NavHostManager.LocalUserSearch.current
+
     if (state.users.isEmpty()) {
         EmptyState()
     } else {
@@ -446,10 +449,15 @@ private fun SuccessContent(
             }) { user ->
 
 
-                CreativeUserListItem(user) {
-                    navController.navigate(Navigation.CustomerProfile(user.userid))
-
-                }
+                CreativeUserListItem(
+                    user = user,
+                    onItemClick = {
+                        navController.navigate(Navigation.CustomerProfile(user.userid))
+                    },
+                    onDeleteClick = {
+                        handleIntent(UserListIntent.DeleteUser(user.userid))
+                    }
+                )
                 /*
                                 AnimatedListItem(
                                     user = user,
@@ -576,13 +584,15 @@ private fun AnimatedListItem(
 
 }
 
-@OptIn(ExperimentalGlideComposeApi::class)
+@OptIn(ExperimentalGlideComposeApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun CreativeUserListItem(
     user: User,
-    onClick: () -> Unit
+    onItemClick: () -> Unit,
+    onDeleteClick: () -> Unit
 ) {
     var isPressed by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.95f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
@@ -597,9 +607,10 @@ private fun CreativeUserListItem(
             .fillMaxWidth()
             .graphicsLayer(scaleX = scale, scaleY = scale)
             .shadow(6.dp, RoundedCornerShape(20.dp))
-            .clickable {
-                onClick()
-            }
+            .combinedClickable(
+                onClick = { onItemClick() },
+                onLongClick = { showDeleteDialog = true }
+            )
             .zIndex(if (isPressed) 1f else 0f),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
@@ -718,6 +729,54 @@ private fun CreativeUserListItem(
                 )
             }
         }
+    }
+
+    // Delete confirmation dialog
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = {
+                Text(
+                    text = "Delete Customer",
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF2D3748)
+                )
+            },
+            text = {
+                Text(
+                    text = "Are you sure you want to delete ${user.name}? This action cannot be undone and will also delete all their orders, measurements, and payments.",
+                    color = Color(0xFF4A5568)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        onDeleteClick()
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = Color(0xFFFF5252)
+                    )
+                ) {
+                    Text(
+                        text = "Delete",
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteDialog = false }
+                ) {
+                    Text(
+                        text = "Cancel",
+                        color = Color(0xFF4A5568)
+                    )
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(16.dp)
+        )
     }
 }
 

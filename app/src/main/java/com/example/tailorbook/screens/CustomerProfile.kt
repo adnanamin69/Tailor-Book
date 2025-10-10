@@ -423,13 +423,8 @@ private fun MeasurementsContent(measurements: List<Measurement>, isLoading: Bool
         }
 
         else -> {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(bottom = 100.dp)
-            ) {
-                itemsIndexed(measurements) { index, measurement ->
-                    AnimatedMeasurementCard(measurement, index)
-                }
+            measurements.firstOrNull()?.let { measurement ->
+                SimpleMeasurementGrid(measurement)
             }
         }
     }
@@ -527,193 +522,116 @@ private fun EmptyMeasurements() {
 }
 
 @Composable
-private fun AnimatedMeasurementCard(measurement: Measurement, index: Int) {
-    var isVisible by remember { mutableStateOf(false) }
-
-    LaunchedEffect(key1 = measurement) {
-        delay(index * 100L)
-        isVisible = true
-    }
-
-    AnimatedVisibility(
-        visible = isVisible,
-        enter = slideInHorizontally(
-            initialOffsetX = { it },
-            animationSpec = tween(500, easing = FastOutSlowInEasing)
-        ) + fadeIn(animationSpec = tween(500))
-    ) {
-        BeautifulMeasurementDashboard(measurement)
-    }
-}
-
-@Composable
-private fun BeautifulMeasurementDashboard(measurement: Measurement) {
-
-
+private fun SimpleMeasurementGrid(measurement: Measurement) {
     val measurementItems = listOf(
-        "لمبائی" to measurement.shirt_length.toString() to Icons.Default.Height,
-        "بازو" to measurement.shirt_arm to Icons.Default.PanTool,
-        "تیرا" to measurement.shoulder.toString() to Icons.Default.Accessibility,
-        "گلہ" to measurement.collar to Icons.Default.RadioButtonChecked,
-        "چھاتی" to measurement.chest.toString() to Icons.Default.Favorite,
-        "چوڑائی" to measurement.lap.toString() to Icons.Default.LinearScale,
-        "دامن" to measurement.pant to Icons.Default.Straighten,
-        "شلوار" to measurement.shalwar.toString() to Icons.Default.Expand,
-        "پنچہ" to measurement.panch.toString() to Icons.Default.CropFree,
+        "لمبائی" to measurement.shirt_length.toString(),
+        "بازو" to measurement.shirt_arm,
+        "تیرا" to measurement.shoulder.toString(),
+        "گلہ" to measurement.collar,
+        "چھاتی" to measurement.chest.toString(),
+        "چوڑائی" to measurement.lap.toString(),
+        "دامن" to measurement.pant,
+        "شلوار" to measurement.shalwar.toString(),
+        "پنچہ" to measurement.panch.toString(),
+        "کالر" to measurement.kalar.toString(),
+        "دامن" to measurement.daman.toString(),
+        "بازو" to measurement.bazo,
+        "سائیڈ جیب" to measurement.sidePoket,
+        "بٹن" to measurement.button,
+        "کف" to measurement.cup,
+        "چمک دھاگہ" to measurement.chamakDaga,
+        "سامنے کی جیب" to measurement.getYesNo(measurement.frontPoket),
+        "شلوار کی جیب" to measurement.getYesNo(measurement.shalwarPoket)
+    )
 
-
-        "کالر" to measurement.kalar.toString() to Icons.Default.Checkroom,
-        "دامن" to measurement.daman.toString() to Icons.Default.Style,
-        "بازو" to measurement.bazo to Icons.Default.FitnessCenter,
-        "سائیڈ جیب" to measurement.sidePoket to Icons.Default.Folder,
-        "بٹن" to measurement.button to Icons.Default.RadioButtonChecked,
-        "کف" to measurement.cup to Icons.Default.Watch,
-        "چمک دھاگہ" to measurement.chamakDaga to Icons.Default.Star,
-        "سامنے کی جیب" to measurement.getYesNo(measurement.frontPoket) to Icons.Default.FolderShared,
-        "شلوار کی جیب" to measurement.getYesNo(measurement.shalwarPoket) to Icons.Default.Work,
-
-
-        )
-
-    Card(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(8.dp, RoundedCornerShape(20.dp)),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.linearGradient(ProfileColors.CardGradient),
-                    RoundedCornerShape(20.dp)
-                )
-                .padding(20.dp)
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+        Text(
+            text = "Measurements",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        // Create a grid with 3 columns
+        measurementItems.chunked(3).forEach { rowItems ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Text(
-                    text = "Measurements",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2D3748),
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
-                measurementItems.chunked(2).forEachIndexed { rowIndex, rowItems ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        rowItems.forEachIndexed { itemIndex, (labelValue, icon) ->
-                            val (label, value) = labelValue
-                            val gradientIndex =
-                                (rowIndex * 2 + itemIndex) % ProfileColors.MeasurementGradients.size
-
-                            BeautifulMeasurementCard(
-                                label = label,
-                                value = value,
-                                icon = icon,
-                                gradient = ProfileColors.MeasurementGradients[gradientIndex]
-                                    ?: ProfileColors.MeasurementGradients[0]!!,
-                                modifier = Modifier
-
-                                    .weight(1f)
-                                    .height(110.dp)
-                            )
-                        }
-                        if (rowItems.size == 1) {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                    }
+                rowItems.forEach { (label, value) ->
+                    SimpleMeasurementItem(
+                        label = label,
+                        value = value,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
-
-                BeautifulMeasurementCard(
-                    label = "Extra",
-                    value = measurement.extra,
-                    icon = Icons.Default.Menu,
-                    gradient = ProfileColors.MeasurementGradients[1]
-                        ?: ProfileColors.MeasurementGradients[1]!!,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
+                // Add spacers if less than 3 items in row
+                repeat(3 - rowItems.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
             }
+        }
+
+        // Extra measurements
+        if (measurement.extra.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            SimpleMeasurementItem(
+                label = "Extra",
+                value = measurement.extra,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
 
 @Composable
-private fun BeautifulMeasurementCard(
+private fun SimpleMeasurementItem(
     label: String,
     value: String,
-    icon: ImageVector,
-    gradient: List<Color>,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier
-            .shadow(6.dp, RoundedCornerShape(16.dp)),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+            .height(60.dp)
+            .shadow(4.dp, RoundedCornerShape(12.dp)),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.9f)
+        )
     ) {
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.linearGradient(gradient),
-                    RoundedCornerShape(16.dp)
-                )
+                .padding(8.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Background pattern
-            Box(
-                modifier = Modifier
-                    .size(60.dp)
-                    .offset(x = (-10).dp, y = (-10).dp)
-                    .background(
-                        Color.White.copy(alpha = 0.1f),
-                        CircleShape
-                    )
+            Text(
+                text = label,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF667eea),
+                textAlign = TextAlign.Center
             )
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(12.dp),
-                verticalArrangement = Arrangement.SpaceAround,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                /* Icon(
-                     imageVector = icon,
-                     contentDescription = null,
-                     tint = Color.White,
-                     modifier = Modifier.size(24.dp)
-                 )
-
-
- */
-
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = Color.White.copy(alpha = 0.9f),
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                )
-
-                Text(
-                    text = value,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
-                )
-
-
-            }
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = value,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF2D3748),
+                textAlign = TextAlign.Center
+            )
         }
     }
 }
+
+
 
 @Composable
 private fun OrdersContent(customerId: String, callBack: (String) -> Unit) {

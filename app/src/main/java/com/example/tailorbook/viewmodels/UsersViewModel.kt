@@ -48,6 +48,7 @@ class UsersViewModel : ViewModel() {
             is UserListIntent.SearchUsers -> filterUsers(intent.query)
             is UserListIntent.UploadImage -> uploadImage(intent)
             UserListIntent.ClearAddCustomerStatus -> clearAddCustomerStatus()
+            is UserListIntent.DeleteUser -> deleteUser(intent.userId)
         }
     }
 
@@ -85,15 +86,16 @@ class UsersViewModel : ViewModel() {
                     .collection("users").document(uid)
                     .collection("customers")
 
-                // Use phone number as document ID to enforce uniqueness
-                val docRef = customers.document(phone)
-                val existing = docRef.get().await()
-                if (existing.exists()) {
-                    _addCustomerError.value = "Customer with this phone already exists"
-                    _isAddingCustomer.value = false
-                    return@launch
-                }
-
+                /*   // Use phone number as document ID to enforce uniqueness
+                   val docRef = customers.document(phone)
+                   val existing = docRef.get().await()
+                   if (existing.exists()) {
+                       _addCustomerError.value = "Customer with this phone already exists"
+                       _isAddingCustomer.value = false
+                       return@launch
+                   }
+   */
+                val docRef = customers.document()
                 docRef.set(userData).await()
                 _addCustomerSuccess.value = true
                 fetchUsers()
@@ -235,6 +237,49 @@ class UsersViewModel : ViewModel() {
             }
         }
     }
+
+    private fun deleteUser(userId: String) {
+        viewModelScope.launch {
+            try {
+                val uid = FirebaseAuth.getInstance().uid ?: return@launch
+
+                // Delete customer document and all its subcollections (orders, measurements, etc.)
+                val customerRef = FirebaseFirestore.getInstance()
+                    .collection("users").document(uid)
+                    .collection("customers").document(userId)
+
+                // Delete all orders for this customer
+                val ordersSnapshot = customerRef.collection("orders").get().await()
+                for (orderDoc in ordersSnapshot.documents) {
+                    // Delete all measurements for each order
+                    val measurementsSnapshot =
+                        orderDoc.reference.collection("measurements").get().await()
+                    for (measurementDoc in measurementsSnapshot.documents) {
+                        measurementDoc.reference.delete().await()
+                    }
+                    // Delete all payments for each order
+                    val paymentsSnapshot = orderDoc.reference.collection("payments").get().await()
+                    for (paymentDoc in paymentsSnapshot.documents) {
+                        paymentDoc.reference.delete().await()
+                    }
+                    // Delete the order
+                    orderDoc.reference.delete().await()
+                }
+
+                // Delete the customer document
+                customerRef.delete().await()
+
+                // Refresh the user list
+                fetchUsers()
+
+                Log.i(TAG, "Successfully deleted customer: $userId")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error deleting customer: $userId", e)
+                _state.value =
+                    UserListState.Error("Failed to delete customer: ${e.localizedMessage}")
+            }
+        }
+    }
 }
 
 
@@ -256,4 +301,5 @@ sealed class UserListIntent {
         UserListIntent()
 
     data class SearchUsers(val query: String) : UserListIntent()
+    data class DeleteUser(val userId: String) : UserListIntent()
 }
