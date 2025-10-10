@@ -2,13 +2,11 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.devtools.ksp)
-    alias(libs.plugins.dagger.hilt.android)
+ //   alias(libs.plugins.dagger.hilt.android)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.google.gms.google.services)
     alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.google.firebase.firebase.perf)
-
-
 }
 
 android {
@@ -71,6 +69,7 @@ dependencies {
 
 
     implementation(libs.androidx.navigation.compose)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -80,15 +79,16 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
 
-    // For Hilt
+/*    // For Hilt
     implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+    ksp(libs.hilt.compiler)*/
 
 
     // For Coroutines
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
-  //  implementation(libs.compose.shimmer)
+    //  implementation(libs.compose.shimmer)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.gson)
 
@@ -98,5 +98,22 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.perf.ktx)
+    implementation(libs.firebase.storage)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.auth)
+    implementation("com.google.firebase:firebase-functions-ktx:21.1.1") // Use the latest version
+
+
+    implementation(libs.xmaterialccp)
+
+
+
+    implementation(libs.koin.core)
+    implementation(libs.koin.androidx.compose)
+    implementation(libs.koin.android)
+
+    implementation (libs.glide.compose)
+
+
 
 }
